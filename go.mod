@@ -1,4 +1,4 @@
-module github.com/inspii/object-storage-sdk
+module github.com/inspii/object_storage_sdk
 
 go 1.12
 
