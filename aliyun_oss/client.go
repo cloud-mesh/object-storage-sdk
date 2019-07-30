@@ -6,21 +6,24 @@ import (
 	sdk "github.com/inspii/object_storage_sdk"
 )
 
-func NewClient(endpoint, accessKey, accessId string) (client *ossClient, err error) {
-	c, err := oss.New(endpoint, accessKey, accessId)
+func NewClient(endpoint, accessKeyId, accessKeySecret string) (client *ossClient, err error) {
+	c, err := oss.New(endpoint, accessKeyId, accessKeySecret)
 	if err != nil {
 		return
 	}
 
-	return &ossClient{c}, nil
+	return &ossClient{accessKeyId, accessKeySecret, endpoint, c}, nil
 }
 
 type ossClient struct {
-	client *oss.Client
+	accessKeyId     string
+	accessKeySecret string
+	endpoint        string
+	client          *oss.Client
 }
 
-func (c *ossClient) Bucket(bucketName string) (sdk.Bucket, error) {
-	return newOssBucket(c.client, bucketName)
+func (c *ossClient) Bucket(bucketName string) (sdk.BasicBucket, error) {
+	return newOssBucket(c, bucketName)
 }
 
 func (c *ossClient) MakeBucket(ctx context.Context, bucketName string, options ...sdk.Option) error {

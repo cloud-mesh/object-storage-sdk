@@ -6,6 +6,7 @@ import (
 	"github.com/inspii/object_storage_sdk/huaweicloud_obs/obs"
 	"io"
 	"os"
+	"time"
 )
 
 const tempFileSuffix = ".temp"
@@ -31,29 +32,6 @@ func (b *obsBucket) GetObject(ctx context.Context, objectKey string) (io.ReadClo
 	return output.Body, nil
 }
 
-func (b *obsBucket) FGetObject(ctx context.Context, objectKey string, localPath string) error {
-	tempFilePath := localPath + tempFileSuffix
-
-	body, err := b.GetObject(ctx, objectKey)
-	if err != nil {
-		return err
-	}
-	defer body.Close()
-
-	fd, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, filePermMode)
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(fd, body)
-	fd.Close()
-	if err != nil {
-		return err
-	}
-
-	return os.Rename(tempFilePath, localPath)
-}
-
 func (b *obsBucket) StatObject(ctx context.Context, objectKey string) (object sdk.ObjectProperties, err error) {
 	input := &obs.GetObjectMetadataInput{
 		Bucket: b.name,
@@ -67,7 +45,7 @@ func (b *obsBucket) StatObject(ctx context.Context, objectKey string) (object sd
 	return sdk.ObjectProperties{
 		Key:  objectKey,
 		Type: output.ObjectType,
-		Size: output.ContentLength,
+		Size: int(output.ContentLength),
 		ETag: output.ETag,
 	}, nil
 }
@@ -87,7 +65,7 @@ func (b *obsBucket) ListObjects(ctx context.Context, objectPrefix string) (objec
 	for _, object := range output.Contents {
 		objects = append(objects, sdk.ObjectProperties{
 			Key:  object.Key,
-			Size: object.Size,
+			Size: int(object.Size),
 			ETag: object.ETag,
 		})
 	}
@@ -106,20 +84,6 @@ func (b *obsBucket) PutObject(ctx context.Context, objectKey string, reader io.R
 		Body: reader,
 	}
 	_, err := b.bucket.PutObject(input)
-	return err
-}
-
-func (b *obsBucket) FPutObject(ctx context.Context, objectKey string, filePath string) error {
-	input := &obs.PutFileInput{
-		PutObjectBasicInput: obs.PutObjectBasicInput{
-			ObjectOperationInput: obs.ObjectOperationInput{
-				Bucket: b.name,
-				Key:    objectKey,
-			},
-		},
-		SourceFile: filePath,
-	}
-	_, err := b.bucket.PutFile(input)
 	return err
 }
 
@@ -160,12 +124,12 @@ func (b *obsBucket) RemoveObjects(ctx context.Context, objectKeys []string) erro
 	return err
 }
 
-func (b *obsBucket) PresignGetObject(ctx context.Context, objectKey string, expiredInSec int64) (signedURL string, err error) {
+func (b *obsBucket) PresignGetObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error) {
 	input := &obs.CreateSignedUrlInput{
 		Method:  obs.HttpMethodGet,
 		Bucket:  b.name,
 		Key:     objectKey,
-		Expires: int(expiredInSec),
+		Expires: int(expiresIn / time.Second),
 	}
 	output, err := b.bucket.CreateSignedUrl(input)
 	if err != nil {
@@ -175,12 +139,12 @@ func (b *obsBucket) PresignGetObject(ctx context.Context, objectKey string, expi
 	return output.SignedUrl, nil
 }
 
-func (b *obsBucket) PresignHeadObject(ctx context.Context, objectKey string, expiredInSec int64) (signedURL string, err error) {
+func (b *obsBucket) PresignHeadObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error) {
 	input := &obs.CreateSignedUrlInput{
 		Method:  obs.HttpMethodHead,
 		Bucket:  b.name,
 		Key:     objectKey,
-		Expires: int(expiredInSec),
+		Expires: int(expiresIn / time.Second),
 	}
 	output, err := b.bucket.CreateSignedUrl(input)
 	if err != nil {
@@ -190,12 +154,12 @@ func (b *obsBucket) PresignHeadObject(ctx context.Context, objectKey string, exp
 	return output.SignedUrl, nil
 }
 
-func (b *obsBucket) PresignPutObject(ctx context.Context, objectKey string, expiredInSec int64) (signedURL string, err error) {
+func (b *obsBucket) PresignPutObject(ctx context.Context, objectKey string, reader io.Reader, expiresIn time.Duration) (signedURL string, err error) {
 	input := &obs.CreateSignedUrlInput{
 		Method:  obs.HttpMethodPut,
 		Bucket:  b.name,
 		Key:     objectKey,
-		Expires: int(expiredInSec),
+		Expires: int(expiresIn / time.Second),
 	}
 	output, err := b.bucket.CreateSignedUrl(input)
 	if err != nil {
@@ -203,8 +167,4 @@ func (b *obsBucket) PresignPutObject(ctx context.Context, objectKey string, expi
 	}
 
 	return output.SignedUrl, nil
-}
-
-func (b *obsBucket) PresignPostObject(ctx context.Context, p *sdk.PostPolicy) (signedURL string, formData map[string]string, err error) {
-	panic("implement me")
 }

@@ -19,7 +19,7 @@ type obsClient struct {
 	client *obs.ObsClient
 }
 
-func (c *obsClient) Bucket(bucketName string) (bucket sdk.Bucket, err error) {
+func (c *obsClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error) {
 	panic("implement me")
 }
 
