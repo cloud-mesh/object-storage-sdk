@@ -2,8 +2,6 @@ package object_storage_sdk
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -72,8 +70,8 @@ func HeadObjectWithURL(signedURL string, timeout time.Duration) (http.Header, er
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode < http.StatusOK && resp.StatusCode >= http.StatusMultipleChoices {
-		return nil, errors.New(fmt.Sprintf("code=%d", resp.StatusCode))
+	if err := CheckResponse(resp); err != nil {
+		return nil, err
 	}
 
 	return resp.Header, nil
@@ -90,8 +88,8 @@ func GetObjectWithURL(signedURL string, timeout time.Duration) (io.ReadCloser, e
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode < http.StatusOK && resp.StatusCode >= http.StatusMultipleChoices {
-		return nil, errors.New(fmt.Sprintf("code=%d", resp.StatusCode))
+	if err := CheckResponse(resp); err != nil {
+		return nil, err
 	}
 
 	return resp.Body, nil
@@ -108,8 +106,8 @@ func PutObjectWithURL(signedURL string, reader io.Reader, timeout time.Duration)
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode < http.StatusOK && resp.StatusCode >= http.StatusMultipleChoices {
-		return errors.New(fmt.Sprintf("code=%d", resp.StatusCode))
+	if err := CheckResponse(resp); err != nil {
+		return err
 	}
 
 	return err

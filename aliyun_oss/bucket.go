@@ -5,7 +5,6 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	sdk "github.com/inspii/object_storage_sdk"
 	"io"
-	"strconv"
 	"time"
 )
 
@@ -14,7 +13,7 @@ type ossBucket struct {
 	bucket *oss.Bucket
 }
 
-func newOssBucket(client *ossClient, bucketName string) (*ossBucket, error) {
+func newOssBucket(bucketName string, client *ossClient) (*ossBucket, error) {
 	bucket, err := client.client.Bucket(bucketName)
 	if err != nil {
 		return nil, err
@@ -33,20 +32,7 @@ func (c *ossBucket) StatObject(ctx context.Context, objectKey string) (object sd
 		return
 	}
 
-	size, err := strconv.Atoi(header.Get("Content-Length"))
-	if err != nil {
-		return
-	}
-	lastModified, err := time.Parse(time.RFC1123, header.Get("Last-Modified"))
-
-	object = sdk.ObjectMeta{
-		ContentType:   header.Get("Content-Type"),
-		ContentLength: size,
-		ETag:          header.Get("Etag"),
-		LastModified:  lastModified,
-	}
-
-	return
+	return sdk.HeaderToObjectMeta(header)
 }
 
 func (c *ossBucket) ListObjects(ctx context.Context, objectPrefix string) (objects []sdk.ObjectProperty, err error) {

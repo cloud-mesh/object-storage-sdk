@@ -23,7 +23,7 @@ type ossClient struct {
 }
 
 func (c *ossClient) Bucket(bucketName string) (sdk.BasicBucket, error) {
-	return newOssBucket(c, bucketName)
+	return newOssBucket(bucketName, c)
 }
 
 func (c *ossClient) MakeBucket(ctx context.Context, bucketName string, options ...sdk.Option) error {

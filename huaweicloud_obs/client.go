@@ -20,7 +20,7 @@ type obsClient struct {
 }
 
 func (c *obsClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error) {
-	return newObsBucket(c.client, bucketName)
+	return newObsBucket(bucketName, c.client)
 }
 
 func (c *obsClient) MakeBucket(ctx context.Context, bucketName string, options ...sdk.Option) error {
