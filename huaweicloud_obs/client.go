@@ -7,7 +7,7 @@ import (
 )
 
 func NewClient(ak, sk, endpoint string) (client *obsClient, err error) {
-	c, err := obs.New(ak, sk, endpoint, )
+	c, err := obs.New(ak, sk, endpoint)
 	if err != nil {
 		return
 	}
@@ -20,7 +20,7 @@ type obsClient struct {
 }
 
 func (c *obsClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error) {
-	panic("implement me")
+	return newObsBucket(c.client, bucketName)
 }
 
 func (c *obsClient) MakeBucket(ctx context.Context, bucketName string, options ...sdk.Option) error {

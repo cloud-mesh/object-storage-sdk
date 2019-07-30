@@ -1,4 +1,4 @@
-package aliyun_oss
+package huaweicloud_obs
 
 import (
 	"context"
@@ -10,35 +10,35 @@ import (
 	"time"
 )
 
-func TestOssBucket_Object(t *testing.T) {
+func TestObsBucket_Object(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
 	tests.BucketObjectTest(t, bucket)
 }
 
-func TestOssBucket_Objects(t *testing.T) {
+func TestObsBucket_Objects(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
 	tests.BucketObjectsTest(t, bucket)
 }
 
-func TestOssBucket_PresignHeadObject(t *testing.T) {
+func TestObsBucket_PresignHeadObject(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
 	tests.BucketPresignHeadObjectTest(t, bucket)
 }
 
-func TestOssBucket_PresignGetObject(t *testing.T) {
+func TestObsBucket_PresignGetObject(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
 	tests.BucketPresignGetObjectTest(t, bucket)
 }
 
-func TestOssBucket_PresignPutObject(t *testing.T) {
+func TestObsBucket_PresignPutObject(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
@@ -46,7 +46,7 @@ func TestOssBucket_PresignPutObject(t *testing.T) {
 }
 
 func newTestBucket(t *testing.T) (bucket sdk.BasicBucket, destroy func()) {
-	client, err := NewClient(testEndpoint, testAccessKeyId, testAccessKeySecret)
+	client, err := NewClient(testEndpoint, testAk, testSk)
 	assert.Nil(t, err)
 
 	bucketName := fmt.Sprintf("testbucket%d", time.Now().Unix())

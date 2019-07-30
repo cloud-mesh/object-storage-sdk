@@ -5,16 +5,16 @@ import (
 	sdk "github.com/inspii/object_storage_sdk"
 	"github.com/inspii/object_storage_sdk/huaweicloud_obs/obs"
 	"io"
-	"os"
 	"time"
 )
 
-const tempFileSuffix = ".temp"
-const filePermMode = os.FileMode(0664) // Default file permission
+func newObsBucket(client *obs.ObsClient, bucketName string) (*obsBucket, error) {
+	return &obsBucket{name: bucketName, client: client}, nil
+}
 
 type obsBucket struct {
 	name   string
-	bucket *obs.ObsClient
+	client *obs.ObsClient
 }
 
 func (b *obsBucket) GetObject(ctx context.Context, objectKey string) (io.ReadCloser, error) {
@@ -24,7 +24,7 @@ func (b *obsBucket) GetObject(ctx context.Context, objectKey string) (io.ReadClo
 			Key:    objectKey,
 		},
 	}
-	output, err := b.bucket.GetObject(input)
+	output, err := b.client.GetObject(input)
 	if err != nil {
 		return nil, err
 	}
@@ -32,41 +32,45 @@ func (b *obsBucket) GetObject(ctx context.Context, objectKey string) (io.ReadClo
 	return output.Body, nil
 }
 
-func (b *obsBucket) StatObject(ctx context.Context, objectKey string) (object sdk.ObjectProperties, err error) {
+func (b *obsBucket) StatObject(ctx context.Context, objectKey string) (object sdk.ObjectMeta, err error) {
 	input := &obs.GetObjectMetadataInput{
 		Bucket: b.name,
 		Key:    objectKey,
 	}
-	output, err := b.bucket.GetObjectMetadata(input)
+	output, err := b.client.GetObjectMetadata(input)
 	if err != nil {
 		return
 	}
 
-	return sdk.ObjectProperties{
-		Key:  objectKey,
-		Type: output.ObjectType,
-		Size: int(output.ContentLength),
-		ETag: output.ETag,
+	return sdk.ObjectMeta{
+		ContentType:   output.ObjectType,
+		ContentLength: int(output.ContentLength),
+		ETag:          output.ETag,
+		LastModified:  output.LastModified,
 	}, nil
 }
 
-func (b *obsBucket) ListObjects(ctx context.Context, objectPrefix string) (objects []sdk.ObjectProperties, err error) {
+func (b *obsBucket) ListObjects(ctx context.Context, objectPrefix string) (objects []sdk.ObjectProperty, err error) {
 	input := &obs.ListObjectsInput{
 		Bucket: b.name,
 		ListObjsInput: obs.ListObjsInput{
 			Prefix: objectPrefix,
 		},
 	}
-	output, err := b.bucket.ListObjects(input)
+	output, err := b.client.ListObjects(input)
 	if err != nil {
 		return
 	}
 
 	for _, object := range output.Contents {
-		objects = append(objects, sdk.ObjectProperties{
-			Key:  object.Key,
-			Size: int(object.Size),
-			ETag: object.ETag,
+		property, err := b.StatObject(ctx, object.Key)
+		if err != nil {
+			return
+		}
+
+		objects = append(objects, sdk.ObjectProperty{
+			ObjectKey:  object.Key,
+			ObjectMeta: property,
 		})
 	}
 
@@ -83,7 +87,7 @@ func (b *obsBucket) PutObject(ctx context.Context, objectKey string, reader io.R
 		},
 		Body: reader,
 	}
-	_, err := b.bucket.PutObject(input)
+	_, err := b.client.PutObject(input)
 	return err
 }
 
@@ -96,7 +100,7 @@ func (b *obsBucket) CopyObject(ctx context.Context, srcObjectKey, dstObjectKey s
 		CopySourceBucket: b.name,
 		CopySourceKey:    srcObjectKey,
 	}
-	_, err := b.bucket.CopyObject(input)
+	_, err := b.client.CopyObject(input)
 	return err
 }
 
@@ -105,7 +109,7 @@ func (b *obsBucket) RemoveObject(ctx context.Context, objectKey string) error {
 		Bucket: b.name,
 		Key:    objectKey,
 	}
-	_, err := b.bucket.DeleteObject(input)
+	_, err := b.client.DeleteObject(input)
 	return err
 }
 
@@ -120,7 +124,7 @@ func (b *obsBucket) RemoveObjects(ctx context.Context, objectKeys []string) erro
 		Bucket:  b.name,
 		Objects: objects,
 	}
-	_, err := b.bucket.DeleteObjects(input)
+	_, err := b.client.DeleteObjects(input)
 	return err
 }
 
@@ -131,7 +135,7 @@ func (b *obsBucket) PresignGetObject(ctx context.Context, objectKey string, expi
 		Key:     objectKey,
 		Expires: int(expiresIn / time.Second),
 	}
-	output, err := b.bucket.CreateSignedUrl(input)
+	output, err := b.client.CreateSignedUrl(input)
 	if err != nil {
 		return "", err
 	}
@@ -146,7 +150,7 @@ func (b *obsBucket) PresignHeadObject(ctx context.Context, objectKey string, exp
 		Key:     objectKey,
 		Expires: int(expiresIn / time.Second),
 	}
-	output, err := b.bucket.CreateSignedUrl(input)
+	output, err := b.client.CreateSignedUrl(input)
 	if err != nil {
 		return "", err
 	}
@@ -154,14 +158,14 @@ func (b *obsBucket) PresignHeadObject(ctx context.Context, objectKey string, exp
 	return output.SignedUrl, nil
 }
 
-func (b *obsBucket) PresignPutObject(ctx context.Context, objectKey string, reader io.Reader, expiresIn time.Duration) (signedURL string, err error) {
+func (b *obsBucket) PresignPutObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error) {
 	input := &obs.CreateSignedUrlInput{
 		Method:  obs.HttpMethodPut,
 		Bucket:  b.name,
 		Key:     objectKey,
 		Expires: int(expiresIn / time.Second),
 	}
-	output, err := b.bucket.CreateSignedUrl(input)
+	output, err := b.client.CreateSignedUrl(input)
 	if err != nil {
 		return "", err
 	}

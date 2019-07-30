@@ -13,18 +13,22 @@ import (
 const tempFileSuffix = ".temp"
 const filePermMode = os.FileMode(0664) // Default file permission
 
-type ObjectProperties struct {
-	Key          string
-	Type         string
-	Size         int
-	ETag         string
-	LastModified time.Time
+type ObjectMeta struct {
+	ContentType   string
+	ContentLength int
+	ETag          string
+	LastModified  time.Time
+}
+
+type ObjectProperty struct {
+	ObjectMeta
+	ObjectKey string
 }
 
 type BasicBucket interface {
 	GetObject(ctx context.Context, objectKey string) (io.ReadCloser, error)
-	StatObject(ctx context.Context, objectKey string) (object ObjectProperties, err error)
-	ListObjects(ctx context.Context, objectPrefix string) (objects []ObjectProperties, err error)
+	StatObject(ctx context.Context, objectKey string) (object ObjectMeta, err error)
+	ListObjects(ctx context.Context, objectPrefix string) (objects []ObjectProperty, err error)
 	PutObject(ctx context.Context, objectKey string, reader io.Reader) error
 	CopyObject(ctx context.Context, srcObjectKey, dstObjectKey string) error
 	RemoveObject(ctx context.Context, objectKey string) error
@@ -35,11 +39,6 @@ type PresignBucket interface {
 	PresignGetObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error)
 	PresignHeadObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error)
 	PresignPutObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error)
-}
-
-type PresignFormBucket interface {
-	PresignPostObject(ctx context.Context, objectKey string, expiresIn time.Duration) (postURL string, formData map[string]string, err error)
-	FPostFormObject(postURL string, formData map[string]string, localFilePath string, timeout time.Duration) error
 }
 
 func FGetObject(ctx context.Context, bucket BasicBucket, objectKey string, localFilePath string) error {
@@ -60,6 +59,24 @@ func FPutObject(ctx context.Context, bucket BasicBucket, objectKey string, local
 	defer fd.Close()
 
 	return bucket.PutObject(ctx, objectKey, fd)
+}
+
+func HeadObjectWithURL(signedURL string, timeout time.Duration) (http.Header, error) {
+	request, err := http.NewRequest(http.MethodHead, signedURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := (&http.Client{
+		Timeout: timeout,
+	}).Do(request)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < http.StatusOK && resp.StatusCode >= http.StatusMultipleChoices {
+		return nil, errors.New(fmt.Sprintf("code=%d", resp.StatusCode))
+	}
+
+	return resp.Header, nil
 }
 
 func GetObjectWithURL(signedURL string, timeout time.Duration) (io.ReadCloser, error) {
