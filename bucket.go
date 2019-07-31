@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -23,24 +24,39 @@ type ObjectProperty struct {
 	ObjectKey string
 }
 
+func HeaderToObjectMeta(header http.Header) (objectMeta ObjectMeta, err error) {
+	size, err := strconv.Atoi(header.Get("Content-Length"))
+	if err != nil {
+		return
+	}
+	lastModified, err := time.Parse(time.RFC1123, header.Get("Last-Modified"))
+
+	return ObjectMeta{
+		ContentType:   header.Get("Content-Type"),
+		ContentLength: size,
+		ETag:          header.Get("Etag"),
+		LastModified:  lastModified,
+	}, nil
+}
+
 type BasicBucket interface {
-	GetObject(ctx context.Context, objectKey string) (io.ReadCloser, error)
-	StatObject(ctx context.Context, objectKey string) (object ObjectMeta, err error)
-	ListObjects(ctx context.Context, objectPrefix string) (objects []ObjectProperty, err error)
-	PutObject(ctx context.Context, objectKey string, reader io.Reader) error
-	CopyObject(ctx context.Context, srcObjectKey, dstObjectKey string) error
-	RemoveObject(ctx context.Context, objectKey string) error
-	RemoveObjects(ctx context.Context, objectKeys []string) error
+	GetObject(objectKey string) (io.ReadCloser, error)
+	StatObject(objectKey string) (object ObjectMeta, err error)
+	ListObjects(objectPrefix string) (objects []ObjectProperty, err error)
+	PutObject(objectKey string, reader io.Reader) error
+	CopyObject(srcObjectKey, dstObjectKey string) error
+	RemoveObject(objectKey string) error
+	RemoveObjects(objectKeys []string) error
 }
 
 type PresignBucket interface {
-	PresignGetObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error)
-	PresignHeadObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error)
-	PresignPutObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error)
+	PresignGetObject(objectKey string, expiresIn time.Duration) (signedURL string, err error)
+	PresignHeadObject(objectKey string, expiresIn time.Duration) (signedURL string, err error)
+	PresignPutObject(objectKey string, expiresIn time.Duration) (signedURL string, err error)
 }
 
-func FGetObject(ctx context.Context, bucket BasicBucket, objectKey string, localFilePath string) error {
-	body, err := bucket.GetObject(ctx, objectKey)
+func FGetObject(bucket BasicBucket, objectKey string, localFilePath string) error {
+	body, err := bucket.GetObject(objectKey)
 	if err != nil {
 		return err
 	}
@@ -56,7 +72,7 @@ func FPutObject(ctx context.Context, bucket BasicBucket, objectKey string, local
 	}
 	defer fd.Close()
 
-	return bucket.PutObject(ctx, objectKey, fd)
+	return bucket.PutObject(objectKey, fd)
 }
 
 func HeadObjectWithURL(signedURL string, timeout time.Duration) (http.Header, error) {

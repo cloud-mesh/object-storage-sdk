@@ -1,7 +1,6 @@
 package aliyun_oss
 
 import (
-	"context"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	sdk "github.com/inspii/object_storage_sdk"
 	"io"
@@ -22,11 +21,11 @@ func newOssBucket(bucketName string, client *ossClient) (*ossBucket, error) {
 	return &ossBucket{client, bucket}, nil
 }
 
-func (c *ossBucket) GetObject(ctx context.Context, objectKey string) (io.ReadCloser, error) {
+func (c *ossBucket) GetObject(objectKey string) (io.ReadCloser, error) {
 	return c.bucket.GetObject(objectKey)
 }
 
-func (c *ossBucket) StatObject(ctx context.Context, objectKey string) (object sdk.ObjectMeta, err error) {
+func (c *ossBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err error) {
 	header, err := c.bucket.GetObjectMeta(objectKey)
 	if err != nil {
 		return
@@ -35,7 +34,7 @@ func (c *ossBucket) StatObject(ctx context.Context, objectKey string) (object sd
 	return sdk.HeaderToObjectMeta(header)
 }
 
-func (c *ossBucket) ListObjects(ctx context.Context, objectPrefix string) (objects []sdk.ObjectProperty, err error) {
+func (c *ossBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProperty, err error) {
 	result, err := c.bucket.ListObjects()
 	if err != nil {
 		return
@@ -56,33 +55,33 @@ func (c *ossBucket) ListObjects(ctx context.Context, objectPrefix string) (objec
 	return
 }
 
-func (c *ossBucket) PutObject(ctx context.Context, objectKey string, reader io.Reader) error {
+func (c *ossBucket) PutObject(objectKey string, reader io.Reader) error {
 	return c.bucket.PutObject(objectKey, reader)
 }
 
-func (c *ossBucket) CopyObject(ctx context.Context, srcObjectKey, dstObjectKey string) error {
+func (c *ossBucket) CopyObject(srcObjectKey, dstObjectKey string) error {
 	_, err := c.bucket.CopyObject(srcObjectKey, dstObjectKey)
 	return err
 }
 
-func (c *ossBucket) RemoveObject(ctx context.Context, objectKey string) error {
+func (c *ossBucket) RemoveObject(objectKey string) error {
 	err := c.bucket.DeleteObject(objectKey)
 	return err
 }
 
-func (c *ossBucket) RemoveObjects(ctx context.Context, objectKeys []string) error {
+func (c *ossBucket) RemoveObjects(objectKeys []string) error {
 	_, err := c.bucket.DeleteObjects(objectKeys)
 	return err
 }
 
-func (c *ossBucket) PresignGetObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error) {
+func (c *ossBucket) PresignGetObject(objectKey string, expiresIn time.Duration) (signedURL string, err error) {
 	return c.bucket.SignURL(objectKey, oss.HTTPGet, int64(expiresIn/time.Second))
 }
 
-func (c *ossBucket) PresignHeadObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error) {
+func (c *ossBucket) PresignHeadObject(objectKey string, expiresIn time.Duration) (signedURL string, err error) {
 	return c.bucket.SignURL(objectKey, oss.HTTPHead, int64(expiresIn/time.Second))
 }
 
-func (c *ossBucket) PresignPutObject(ctx context.Context, objectKey string, expiresIn time.Duration) (signedURL string, err error) {
+func (c *ossBucket) PresignPutObject(objectKey string, expiresIn time.Duration) (signedURL string, err error) {
 	return c.bucket.SignURL(objectKey, oss.HTTPPut, int64(expiresIn/time.Second))
 }

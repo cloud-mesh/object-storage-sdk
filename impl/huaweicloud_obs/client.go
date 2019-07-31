@@ -1,9 +1,8 @@
 package huaweicloud_obs
 
 import (
-	"context"
 	sdk "github.com/inspii/object_storage_sdk"
-	"github.com/inspii/object_storage_sdk/huaweicloud_obs/obs"
+	"github.com/inspii/object_storage_sdk/impl/huaweicloud_obs/obs"
 )
 
 func NewClient(ak, sk, endpoint string) (client *obsClient, err error) {
@@ -23,7 +22,7 @@ func (c *obsClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error
 	return newObsBucket(bucketName, c.client)
 }
 
-func (c *obsClient) MakeBucket(ctx context.Context, bucketName string, options ...sdk.Option) error {
+func (c *obsClient) MakeBucket(bucketName string, options ...sdk.Option) error {
 	input := &obs.CreateBucketInput{
 		Bucket: bucketName,
 	}
@@ -32,7 +31,7 @@ func (c *obsClient) MakeBucket(ctx context.Context, bucketName string, options .
 	return err
 }
 
-func (c *obsClient) ListBucket(ctx context.Context, options ...sdk.Option) (buckets []sdk.BucketProperties, err error) {
+func (c *obsClient) ListBucket(options ...sdk.Option) (buckets []sdk.BucketProperties, err error) {
 	input := &obs.ListBucketsInput{}
 	result, err := c.client.ListBuckets(input)
 	if err != nil {
@@ -49,12 +48,12 @@ func (c *obsClient) ListBucket(ctx context.Context, options ...sdk.Option) (buck
 	return
 }
 
-func (c *obsClient) RemoveBucket(ctx context.Context, bucketName string) error {
+func (c *obsClient) RemoveBucket(bucketName string) error {
 	_, err := c.client.DeleteBucket(bucketName)
 	return err
 }
 
-func (c *obsClient) CopyObject(ctx context.Context, srcBucketName, srcObjectKey, dstBucketName, dstObjectKey string) error {
+func (c *obsClient) CopyObject(srcBucketName, srcObjectKey, dstBucketName, dstObjectKey string) error {
 	input := &obs.CopyObjectInput{
 		ObjectOperationInput: obs.ObjectOperationInput{
 			Bucket: dstBucketName,
@@ -67,7 +66,7 @@ func (c *obsClient) CopyObject(ctx context.Context, srcBucketName, srcObjectKey,
 	return err
 }
 
-func (c *obsClient) GetBucketPolicy(ctx context.Context, bucketName string) (policy string, err error) {
+func (c *obsClient) GetBucketPolicy(bucketName string) (policy string, err error) {
 	result, err := c.client.GetBucketPolicy(bucketName)
 	if err != nil {
 		return
@@ -75,7 +74,7 @@ func (c *obsClient) GetBucketPolicy(ctx context.Context, bucketName string) (pol
 	return result.Policy, nil
 }
 
-func (c *obsClient) SetBucketPolicy(ctx context.Context, bucketName, policy string) error {
+func (c *obsClient) SetBucketPolicy(bucketName, policy string) error {
 	input := &obs.SetBucketPolicyInput{
 		Bucket: bucketName,
 		Policy: policy,

@@ -1,7 +1,6 @@
 package minio_s3
 
 import (
-	"context"
 	sdk "github.com/inspii/object_storage_sdk"
 	"github.com/minio/minio-go"
 )
@@ -27,11 +26,11 @@ func (c *minioClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err err
 	return newMinioBucket(bucketName, c), nil
 }
 
-func (c *minioClient) MakeBucket(ctx context.Context, bucketName string, options ...sdk.Option) error {
+func (c *minioClient) MakeBucket(bucketName string, options ...sdk.Option) error {
 	return c.client.MakeBucket(bucketName, c.region)
 }
 
-func (c *minioClient) ListBucket(ctx context.Context, options ...sdk.Option) (buckets []sdk.BucketProperties, err error) {
+func (c *minioClient) ListBucket(options ...sdk.Option) (buckets []sdk.BucketProperties, err error) {
 	list, err := c.client.ListBuckets()
 	if err != nil {
 		return
@@ -47,11 +46,11 @@ func (c *minioClient) ListBucket(ctx context.Context, options ...sdk.Option) (bu
 	return
 }
 
-func (c *minioClient) RemoveBucket(ctx context.Context, bucketName string) error {
+func (c *minioClient) RemoveBucket(bucketName string) error {
 	return c.client.RemoveBucket(bucketName)
 }
 
-func (c *minioClient) CopyObject(ctx context.Context, srcBucketName, srcObjectKey, dstBucketName, dstObjectKey string) error {
+func (c *minioClient) CopyObject(srcBucketName, srcObjectKey, dstBucketName, dstObjectKey string) error {
 	dst, err := minio.NewDestinationInfo(dstBucketName, dstObjectKey, nil, nil)
 	if err != nil {
 		return err

@@ -16,7 +16,7 @@ type minioBucket struct {
 	*minioClient
 }
 
-func (b *minioBucket) GetObject(ctx context.Context, objectKey string) (io.ReadCloser, error) {
+func (b *minioBucket) GetObject(objectKey string) (io.ReadCloser, error) {
 	obj, err := b.client.GetObject(b.bucketName, objectKey, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func (b *minioBucket) GetObject(ctx context.Context, objectKey string) (io.ReadC
 	return obj, err
 }
 
-func (b *minioBucket) StatObject(ctx context.Context, objectKey string) (object sdk.ObjectMeta, err error) {
+func (b *minioBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err error) {
 	info, err := b.client.StatObject(b.bucketName, objectKey, minio.StatObjectOptions{})
 	if err != nil {
 		return
@@ -39,7 +39,8 @@ func (b *minioBucket) StatObject(ctx context.Context, objectKey string) (object 
 	}, nil
 }
 
-func (b *minioBucket) ListObjects(ctx context.Context, objectPrefix string) (objects []sdk.ObjectProperty, err error) {
+func (b *minioBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProperty, err error) {
+	ctx := context.Background()
 	doneCh := make(chan struct{})
 	go func() {
 		<-ctx.Done()
@@ -62,12 +63,12 @@ func (b *minioBucket) ListObjects(ctx context.Context, objectPrefix string) (obj
 	return
 }
 
-func (b *minioBucket) PutObject(ctx context.Context, objectKey string, reader io.Reader) error {
+func (b *minioBucket) PutObject(objectKey string, reader io.Reader) error {
 	_, err := b.client.PutObject(b.bucketName, objectKey, reader, -1, minio.PutObjectOptions{})
 	return err
 }
 
-func (b *minioBucket) CopyObject(ctx context.Context, srcObjectKey, dstObjectKey string) error {
+func (b *minioBucket) CopyObject(srcObjectKey, dstObjectKey string) error {
 	dst, err := minio.NewDestinationInfo(b.bucketName, dstObjectKey, nil, nil)
 	if err != nil {
 		return err
@@ -76,15 +77,15 @@ func (b *minioBucket) CopyObject(ctx context.Context, srcObjectKey, dstObjectKey
 	return b.client.CopyObject(dst, src)
 }
 
-func (b *minioBucket) RemoveObject(ctx context.Context, objectKey string) error {
+func (b *minioBucket) RemoveObject(objectKey string) error {
 	return b.client.RemoveObject(b.bucketName, objectKey)
 }
 
-func (b *minioBucket) RemoveObjects(ctx context.Context, objectKeys []string) error {
+func (b *minioBucket) RemoveObjects(objectKeys []string) error {
 	objectsCh := make(chan string, 1)
 	var errorCh <-chan minio.RemoveObjectError
 	go func() {
-		errorCh = b.client.RemoveObjectsWithContext(ctx, b.bucketName, objectsCh)
+		errorCh = b.client.RemoveObjects(b.bucketName, objectsCh)
 	}()
 
 	for _, objectKey := range objectKeys {

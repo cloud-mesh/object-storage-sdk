@@ -22,8 +22,8 @@ type cosBucket struct {
 	client     *cos.Client
 }
 
-func (b *cosBucket) GetObject(ctx context.Context, objectKey string) (io.ReadCloser, error) {
-	resp, err := b.client.Object.Get(ctx, objectKey, nil)
+func (b *cosBucket) GetObject(objectKey string) (io.ReadCloser, error) {
+	resp, err := b.client.Object.Get(context.TODO(), objectKey, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +31,8 @@ func (b *cosBucket) GetObject(ctx context.Context, objectKey string) (io.ReadClo
 	return resp.Body, nil
 }
 
-func (b *cosBucket) StatObject(ctx context.Context, objectKey string) (object sdk.ObjectMeta, err error) {
-	resp, err := b.client.Object.Head(ctx, objectKey, nil)
+func (b *cosBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err error) {
+	resp, err := b.client.Object.Head(context.TODO(), objectKey, nil)
 	if err != nil {
 		return
 	}
@@ -40,8 +40,8 @@ func (b *cosBucket) StatObject(ctx context.Context, objectKey string) (object sd
 	return sdk.HeaderToObjectMeta(resp.Header)
 }
 
-func (b *cosBucket) ListObjects(ctx context.Context, objectPrefix string) (objects []sdk.ObjectProperty, err error) {
-	ret, _, err := b.client.Bucket.Get(ctx, &cos.BucketGetOptions{
+func (b *cosBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProperty, err error) {
+	ret, _, err := b.client.Bucket.Get(context.TODO(), &cos.BucketGetOptions{
 		Prefix: objectPrefix,
 	})
 	if err != nil {
@@ -67,22 +67,22 @@ func (b *cosBucket) ListObjects(ctx context.Context, objectPrefix string) (objec
 	return
 }
 
-func (b *cosBucket) PutObject(ctx context.Context, objectKey string, reader io.Reader) error {
-	_, err := b.client.Object.Put(ctx, objectKey, reader, nil)
+func (b *cosBucket) PutObject(objectKey string, reader io.Reader) error {
+	_, err := b.client.Object.Put(context.TODO(), objectKey, reader, nil)
 	return err
 }
 
-func (b *cosBucket) CopyObject(ctx context.Context, srcObjectKey, dstObjectKey string) error {
-	_, _, err := b.client.Object.Copy(ctx, dstObjectKey, objectURL(b.region, b.bucketName, srcObjectKey), nil)
+func (b *cosBucket) CopyObject(srcObjectKey, dstObjectKey string) error {
+	_, _, err := b.client.Object.Copy(context.TODO(), dstObjectKey, objectURL(b.region, b.bucketName, srcObjectKey), nil)
 	return err
 }
 
-func (b *cosBucket) RemoveObject(ctx context.Context, objectKey string) error {
-	_, err := b.client.Object.Delete(ctx, objectKey)
+func (b *cosBucket) RemoveObject(objectKey string) error {
+	_, err := b.client.Object.Delete(context.TODO(), objectKey)
 	return err
 }
 
-func (b *cosBucket) RemoveObjects(ctx context.Context, objectKeys []string) error {
+func (b *cosBucket) RemoveObjects(objectKeys []string) error {
 	objects := make([]cos.Object, 0, len(objectKeys))
 	for _, objectKey := range objectKeys {
 		objects = append(objects, cos.Object{
@@ -90,7 +90,7 @@ func (b *cosBucket) RemoveObjects(ctx context.Context, objectKeys []string) erro
 		})
 	}
 
-	_, _, err := b.client.Object.DeleteMulti(ctx, &cos.ObjectDeleteMultiOptions{
+	_, _, err := b.client.Object.DeleteMulti(context.TODO(), &cos.ObjectDeleteMultiOptions{
 		Objects: objects,
 	})
 	return err

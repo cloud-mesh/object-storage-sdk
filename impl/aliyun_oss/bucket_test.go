@@ -1,10 +1,9 @@
 package aliyun_oss
 
 import (
-	"context"
 	"fmt"
 	sdk "github.com/inspii/object_storage_sdk"
-	"github.com/inspii/object_storage_sdk/tests"
+	"github.com/inspii/object_storage_sdk/testcase"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -14,35 +13,35 @@ func TestOssBucket_Object(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
-	tests.BucketObjectTest(t, bucket)
+	testcase.BucketObjectTest(t, bucket)
 }
 
 func TestOssBucket_Objects(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
-	tests.BucketObjectsTest(t, bucket)
+	testcase.BucketObjectsTest(t, bucket)
 }
 
 func TestOssBucket_PresignHeadObject(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
-	tests.BucketPresignHeadObjectTest(t, bucket)
+	testcase.BucketPresignHeadObjectTest(t, bucket)
 }
 
 func TestOssBucket_PresignGetObject(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
-	tests.BucketPresignGetObjectTest(t, bucket)
+	testcase.BucketPresignGetObjectTest(t, bucket)
 }
 
 func TestOssBucket_PresignPutObject(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
-	tests.BucketPresignPutObjectTest(t, bucket)
+	testcase.BucketPresignPutObjectTest(t, bucket)
 }
 
 func newTestBucket(t *testing.T) (bucket sdk.BasicBucket, destroy func()) {
@@ -50,13 +49,13 @@ func newTestBucket(t *testing.T) (bucket sdk.BasicBucket, destroy func()) {
 	assert.Nil(t, err)
 
 	bucketName := fmt.Sprintf("testbucket%d", time.Now().Unix())
-	err = client.MakeBucket(context.Background(), bucketName)
+	err = client.MakeBucket(bucketName)
 	assert.Nil(t, err)
 
 	bucket, err = client.Bucket(bucketName)
 	return bucket, func() {
 		time.Sleep(time.Second)
-		err := client.RemoveBucket(context.Background(), bucketName)
+		err := client.RemoveBucket(bucketName)
 		assert.Nil(t, err)
 	}
 }

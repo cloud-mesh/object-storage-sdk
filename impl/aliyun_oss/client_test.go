@@ -1,7 +1,7 @@
 package aliyun_oss
 
 import (
-	"github.com/inspii/object_storage_sdk/tests"
+	"github.com/inspii/object_storage_sdk/testcase"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -17,12 +17,12 @@ func TestOssClient_Bucket(t *testing.T) {
 	client, err := NewClient(testEndpoint, testAccessKeyId, testAccessKeySecret)
 	assert.Nil(t, err)
 
-	tests.ClientBucketTest(t, client)
+	testcase.ClientBucketTest(t, client)
 }
 
 func TestOssClient_CopyObject(t *testing.T) {
 	client, err := NewClient(testEndpoint, testAccessKeyId, testAccessKeySecret)
 	assert.Nil(t, err)
 
-	tests.ClientCopyObjectTest(t, client)
+	testcase.ClientCopyObjectTest(t, client)
 }

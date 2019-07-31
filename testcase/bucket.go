@@ -1,8 +1,7 @@
-package tests
+package testcase
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	sdk "github.com/inspii/object_storage_sdk"
 	"github.com/stretchr/testify/assert"
@@ -14,16 +13,16 @@ import (
 func BucketObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 	objectKey := fmt.Sprintf("testobjecta%d.txt", time.Now().Unix())
 	buffer := bytes.NewBufferString("test content")
-	err := bucket.PutObject(context.Background(), objectKey, buffer)
+	err := bucket.PutObject(objectKey, buffer)
 	assert.Nil(t, err)
 
-	_, err = bucket.StatObject(context.Background(), objectKey)
+	_, err = bucket.StatObject(objectKey)
 	assert.Nil(t, err)
 
-	_, err = bucket.GetObject(context.Background(), objectKey)
+	_, err = bucket.GetObject(objectKey)
 	assert.Nil(t, err)
 
-	err = bucket.RemoveObject(context.Background(), objectKey)
+	err = bucket.RemoveObject(objectKey)
 }
 
 func BucketObjectsTest(t *testing.T, bucket sdk.BasicBucket) {
@@ -31,21 +30,21 @@ func BucketObjectsTest(t *testing.T, bucket sdk.BasicBucket) {
 	objectKeyA := fmt.Sprintf("testobjecta%d.txt", time.Now().Unix())
 	objectKeyB := fmt.Sprintf("testobjectb%d.txt", time.Now().Unix())
 	objectKeyC := fmt.Sprintf("testobjectc%d.txt", time.Now().Unix())
-	err := bucket.PutObject(context.Background(), objectKeyA, buffer)
+	err := bucket.PutObject(objectKeyA, buffer)
 	assert.Nil(t, err)
-	err = bucket.PutObject(context.Background(), objectKeyB, buffer)
+	err = bucket.PutObject(objectKeyB, buffer)
 	assert.Nil(t, err)
-	err = bucket.CopyObject(context.Background(), objectKeyA, objectKeyC)
+	err = bucket.CopyObject(objectKeyA, objectKeyC)
 	assert.Nil(t, err)
 
-	objects, err := bucket.ListObjects(context.Background(), "testobject")
+	objects, err := bucket.ListObjects("testobject")
 	assert.Nil(t, err)
 	assert.Len(t, objects, 3)
 
-	err = bucket.RemoveObjects(context.Background(), []string{objectKeyA, objectKeyB, objectKeyC})
+	err = bucket.RemoveObjects([]string{objectKeyA, objectKeyB, objectKeyC})
 	assert.Nil(t, err)
 
-	objects, err = bucket.ListObjects(context.Background(), "testobject")
+	objects, err = bucket.ListObjects("testobject")
 	assert.Nil(t, err)
 	assert.Len(t, objects, 0)
 }
@@ -54,12 +53,12 @@ func BucketPresignHeadObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 	objectKey := fmt.Sprintf("testobject%d.txt", time.Now().Unix())
 	content := "test content"
 	buffer := bytes.NewBufferString(content)
-	err := bucket.PutObject(context.Background(), objectKey, buffer)
+	err := bucket.PutObject(objectKey, buffer)
 	assert.Nil(t, err)
-	defer bucket.RemoveObject(context.Background(), objectKey)
+	defer bucket.RemoveObject(objectKey)
 
 	presignBucket := bucket.(sdk.PresignBucket)
-	signedURL, err := presignBucket.PresignHeadObject(context.Background(), objectKey, time.Second)
+	signedURL, err := presignBucket.PresignHeadObject(objectKey, time.Second)
 	assert.Nil(t, err)
 
 	_, err = sdk.HeadObjectWithURL(signedURL, 5*time.Second)
@@ -70,12 +69,12 @@ func BucketPresignGetObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 	objectKey := fmt.Sprintf("testobject%d.txt", time.Now().Unix())
 	content := "test content"
 	buffer := bytes.NewBufferString(content)
-	err := bucket.PutObject(context.Background(), objectKey, buffer)
+	err := bucket.PutObject(objectKey, buffer)
 	assert.Nil(t, err)
-	defer bucket.RemoveObject(context.Background(), objectKey)
+	defer bucket.RemoveObject(objectKey)
 
 	presignBucket := bucket.(sdk.PresignBucket)
-	signedURL, err := presignBucket.PresignGetObject(context.Background(), objectKey, time.Second)
+	signedURL, err := presignBucket.PresignGetObject(objectKey, time.Second)
 	assert.Nil(t, err)
 
 	reader, err := sdk.GetObjectWithURL(signedURL, 5*time.Second)
@@ -88,16 +87,16 @@ func BucketPresignGetObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 func BucketPresignPutObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 	objectKey := fmt.Sprintf("testobject%d.txt", time.Now().Unix())
 	presignBucket := bucket.(sdk.PresignBucket)
-	signedURL, err := presignBucket.PresignPutObject(context.Background(), objectKey, time.Second)
+	signedURL, err := presignBucket.PresignPutObject(objectKey, time.Second)
 	assert.Nil(t, err)
 
 	content := "test content"
 	buffer := bytes.NewBufferString(content)
 	err = sdk.PutObjectWithURL(signedURL, buffer, 5*time.Second)
 	assert.Nil(t, err)
-	defer bucket.RemoveObject(context.Background(), objectKey)
+	defer bucket.RemoveObject(objectKey)
 
-	reader, err := bucket.GetObject(context.Background(), objectKey)
+	reader, err := bucket.GetObject(objectKey)
 	assert.Nil(t, err)
 	bytes, err := ioutil.ReadAll(reader)
 	assert.Nil(t, err)

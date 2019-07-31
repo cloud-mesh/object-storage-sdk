@@ -20,11 +20,11 @@ type kodoBucket struct {
 	bucketManager *storage.BucketManager
 }
 
-func (b *kodoBucket) GetObject(ctx context.Context, objectKey string) (io.ReadCloser, error) {
+func (b *kodoBucket) GetObject(objectKey string) (io.ReadCloser, error) {
 	panic("implement me")
 }
 
-func (b *kodoBucket) StatObject(ctx context.Context, objectKey string) (object sdk.ObjectMeta, err error) {
+func (b *kodoBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err error) {
 	info, err := b.bucketManager.Stat(b.bucketName, objectKey)
 	if err != nil {
 		return
@@ -39,8 +39,8 @@ func (b *kodoBucket) StatObject(ctx context.Context, objectKey string) (object s
 	return
 }
 
-func (b *kodoBucket) ListObjects(ctx context.Context, objectPrefix string) (objects []sdk.ObjectProperty, err error) {
-	retCh, err := b.bucketManager.ListBucketContext(ctx, b.bucketName, objectPrefix, "", "")
+func (b *kodoBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProperty, err error) {
+	retCh, err := b.bucketManager.ListBucketContext(context.TODO(), b.bucketName, objectPrefix, "", "")
 	if err != nil {
 		return
 	}
@@ -60,19 +60,19 @@ func (b *kodoBucket) ListObjects(ctx context.Context, objectPrefix string) (obje
 	return
 }
 
-func (b *kodoBucket) PutObject(ctx context.Context, objectKey string, reader io.Reader) error {
+func (b *kodoBucket) PutObject(objectKey string, reader io.Reader) error {
 	panic("implement me")
 }
 
-func (b *kodoBucket) CopyObject(ctx context.Context, srcObjectKey, dstObjectKey string) error {
+func (b *kodoBucket) CopyObject(srcObjectKey, dstObjectKey string) error {
 	return b.bucketManager.Copy(b.bucketName, srcObjectKey, b.bucketName, dstObjectKey, true)
 }
 
-func (b *kodoBucket) RemoveObject(ctx context.Context, objectKey string) error {
+func (b *kodoBucket) RemoveObject(objectKey string) error {
 	return b.bucketManager.Delete(b.bucketName, objectKey)
 }
 
-func (b *kodoBucket) RemoveObjects(ctx context.Context, objectKeys []string) error {
+func (b *kodoBucket) RemoveObjects(objectKeys []string) error {
 	for _, objectKey := range objectKeys {
 		if err := b.bucketManager.Delete(b.bucketName, objectKey); err != nil {
 			return err
