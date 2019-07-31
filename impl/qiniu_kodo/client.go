@@ -6,22 +6,30 @@ import (
 	"github.com/qiniu/api.v7/storage"
 )
 
-func NewClient(accessKey, secretKey string) *kodoClient {
+func NewClient(accessKey, secretKey string, publicDomain, privateDomain string, zone *storage.Zone) *kodoClient {
 	mac := qbox.NewMac(accessKey, secretKey)
 	cfg := storage.Config{
 		UseHTTPS: false,
 	}
 
 	bucketManager := storage.NewBucketManager(mac, &cfg)
-	return &kodoClient{bucketManager: bucketManager}
+	return &kodoClient{
+		publicDomain:  publicDomain,
+		privateDomain: privateDomain,
+		zone:          zone,
+		bucketManager: bucketManager,
+	}
 }
 
 type kodoClient struct {
+	publicDomain  string
+	privateDomain string
+	zone          *storage.Zone
 	bucketManager *storage.BucketManager
 }
 
 func (c *kodoClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error) {
-	return newKodoBucket(bucketName, c.bucketManager), nil
+	return newKodoBucket(bucketName, c), nil
 }
 
 func (c *kodoClient) MakeBucket(bucketName string, options ...sdk.Option) error {

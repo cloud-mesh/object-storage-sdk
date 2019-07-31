@@ -8,24 +8,35 @@ import (
 	"time"
 )
 
-func newKodoBucket(bucketName string, bucketMananger *storage.BucketManager) *kodoBucket {
+const downloadObjectTimeout = time.Hour
+
+func newKodoBucket(bucketName string, client *kodoClient) *kodoBucket {
+	cfg := &storage.Config{
+		UseHTTPS:      false,
+		UseCdnDomains: false,
+	}
+	uploader := storage.NewFormUploader(cfg)
 	return &kodoBucket{
-		bucketName:    bucketName,
-		bucketManager: bucketMananger,
+		bucketName:     bucketName,
+		client:         client,
+		bucketUploader: uploader,
 	}
 }
 
 type kodoBucket struct {
-	bucketName    string
-	bucketManager *storage.BucketManager
+	bucketName     string
+	client         *kodoClient
+	bucketUploader *storage.FormUploader
 }
 
 func (b *kodoBucket) GetObject(objectKey string) (io.ReadCloser, error) {
-	panic("implement me")
+	deadline := time.Now().Add(downloadObjectTimeout).Unix()
+	url := storage.MakePrivateURL(b.client.bucketManager.Mac, b.client.privateDomain, objectKey, deadline)
+	return sdk.GetObjectWithURL(url, downloadObjectTimeout)
 }
 
 func (b *kodoBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err error) {
-	info, err := b.bucketManager.Stat(b.bucketName, objectKey)
+	info, err := b.client.bucketManager.Stat(b.bucketName, objectKey)
 	if err != nil {
 		return
 	}
@@ -40,7 +51,7 @@ func (b *kodoBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err er
 }
 
 func (b *kodoBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProperty, err error) {
-	retCh, err := b.bucketManager.ListBucketContext(context.TODO(), b.bucketName, objectPrefix, "", "")
+	retCh, err := b.client.bucketManager.ListBucketContext(context.TODO(), b.bucketName, objectPrefix, "", "")
 	if err != nil {
 		return
 	}
@@ -61,20 +72,25 @@ func (b *kodoBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectPrope
 }
 
 func (b *kodoBucket) PutObject(objectKey string, reader io.Reader) error {
-	panic("implement me")
+	scope := b.bucketName + ":" + objectKey
+	policy := &storage.PutPolicy{Scope: scope}
+	uploadToken := policy.UploadToken(b.client.bucketManager.Mac)
+	ret := storage.PutRet{}
+
+	return b.bucketUploader.Put(context.TODO(), &ret, uploadToken, objectKey, reader, 0, nil)
 }
 
 func (b *kodoBucket) CopyObject(srcObjectKey, dstObjectKey string) error {
-	return b.bucketManager.Copy(b.bucketName, srcObjectKey, b.bucketName, dstObjectKey, true)
+	return b.client.bucketManager.Copy(b.bucketName, srcObjectKey, b.bucketName, dstObjectKey, true)
 }
 
 func (b *kodoBucket) RemoveObject(objectKey string) error {
-	return b.bucketManager.Delete(b.bucketName, objectKey)
+	return b.client.bucketManager.Delete(b.bucketName, objectKey)
 }
 
 func (b *kodoBucket) RemoveObjects(objectKeys []string) error {
 	for _, objectKey := range objectKeys {
-		if err := b.bucketManager.Delete(b.bucketName, objectKey); err != nil {
+		if err := b.client.bucketManager.Delete(b.bucketName, objectKey); err != nil {
 			return err
 		}
 	}
