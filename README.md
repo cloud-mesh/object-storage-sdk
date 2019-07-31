@@ -5,8 +5,7 @@
 - [阿里对象存储OSS](https://www.aliyun.com/product/oss)
 - [华为云对象存储OBS](https://www.huaweicloud.com/product/obs.html)
 - [腾讯云对象存储COS](https://cloud.tencent.com/product/cos)
-- [七牛云存储KODO](https://www.qiniu.com/products/kodo)
-- [Minio对象存储（兼容亚马逊S3）](https://min.io/)
+- [Minio对象存储（兼容亚马逊S3，七牛云云存储KODO）](https://min.io/)
 
 ## 为什么又一个SDK
 
