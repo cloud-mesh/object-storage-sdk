@@ -5,19 +5,24 @@ import (
 	sdk "github.com/inspii/object_storage_sdk"
 	"github.com/tencentyun/cos-go-sdk-v5"
 	"io"
+	"net/http"
 	"time"
 )
 
-func newBucket(region, bucketName string, client *cos.Client) *cosBucket {
-	return &cosBucket{
-		region:     region,
-		bucketName: bucketName,
-		client:     client,
+func newBucket(bucketName string, client *cosClient) (*cosBucket, error) {
+	c, err := client.bucketClient(bucketName)
+	if err != nil {
+		return nil, err
 	}
+	return &cosBucket{
+		cosClient:  client,
+		bucketName: bucketName,
+		client:     c,
+	}, nil
 }
 
 type cosBucket struct {
-	region     string
+	*cosClient
 	bucketName string
 	client     *cos.Client
 }
@@ -49,7 +54,7 @@ func (b *cosBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProper
 	}
 
 	for _, object := range ret.Contents {
-		lastModified, err := time.Parse(time.RFC1123, object.LastModified)
+		lastModified, err := time.Parse(gmtIso8601, object.LastModified)
 		if err != nil {
 			return nil, err
 		}
@@ -67,13 +72,13 @@ func (b *cosBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProper
 	return
 }
 
-func (b *cosBucket) PutObject(objectKey string, reader io.Reader) error {
+func (b *cosBucket) PutObject(objectKey string, reader io.Reader, objectSize int) error {
 	_, err := b.client.Object.Put(context.TODO(), objectKey, reader, nil)
 	return err
 }
 
 func (b *cosBucket) CopyObject(srcObjectKey, dstObjectKey string) error {
-	_, _, err := b.client.Object.Copy(context.TODO(), dstObjectKey, objectURL(b.region, b.bucketName, srcObjectKey), nil)
+	_, _, err := b.client.Object.Copy(context.TODO(), dstObjectKey, objectURI(b.region, b.appId, b.bucketName, srcObjectKey), nil)
 	return err
 }
 
@@ -94,4 +99,31 @@ func (b *cosBucket) RemoveObjects(objectKeys []string) error {
 		Objects: objects,
 	})
 	return err
+}
+
+func (b *cosBucket) PresignGetObject(objectKey string, expiresIn time.Duration) (string, error) {
+	url, err := b.client.Object.GetPresignedURL(context.TODO(), http.MethodGet, objectKey, b.secretId, b.secretKey, expiresIn, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return url.String(), nil
+}
+
+func (b *cosBucket) PresignHeadObject(objectKey string, expiresIn time.Duration) (string, error) {
+	url, err := b.client.Object.GetPresignedURL(context.TODO(), http.MethodHead, objectKey, b.secretId, b.secretKey, expiresIn, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return url.String(), nil
+}
+
+func (b *cosBucket) PresignPutObject(objectKey string, expiresIn time.Duration) (string, error) {
+	url, err := b.client.Object.GetPresignedURL(context.TODO(), http.MethodPut, objectKey, b.secretId, b.secretKey, expiresIn, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return url.String(), nil
 }

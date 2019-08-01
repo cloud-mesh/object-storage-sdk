@@ -43,7 +43,7 @@ type BasicBucket interface {
 	GetObject(objectKey string) (io.ReadCloser, error)
 	StatObject(objectKey string) (object ObjectMeta, err error)
 	ListObjects(objectPrefix string) (objects []ObjectProperty, err error)
-	PutObject(objectKey string, reader io.Reader) error
+	PutObject(objectKey string, reader io.Reader, objectSize int) error
 	CopyObject(srcObjectKey, dstObjectKey string) error
 	RemoveObject(objectKey string) error
 	RemoveObjects(objectKeys []string) error
@@ -72,7 +72,12 @@ func FPutObject(ctx context.Context, bucket BasicBucket, objectKey string, local
 	}
 	defer fd.Close()
 
-	return bucket.PutObject(objectKey, fd)
+	fileInfo, err := fd.Stat()
+	if err != nil {
+		return err
+	}
+
+	return bucket.PutObject(objectKey, fd, int(fileInfo.Size()))
 }
 
 func HeadObjectWithURL(signedURL string, timeout time.Duration) (http.Header, error) {

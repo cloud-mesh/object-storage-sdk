@@ -5,6 +5,7 @@ import (
 	sdk "github.com/inspii/object_storage_sdk"
 	"github.com/minio/minio-go"
 	"io"
+	"time"
 )
 
 func newMinioBucket(bucketName string, client *minioClient) *minioBucket {
@@ -63,8 +64,8 @@ func (b *minioBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProp
 	return
 }
 
-func (b *minioBucket) PutObject(objectKey string, reader io.Reader) error {
-	_, err := b.client.PutObject(b.bucketName, objectKey, reader, -1, minio.PutObjectOptions{})
+func (b *minioBucket) PutObject(objectKey string, reader io.Reader, objectSize int) error {
+	_, err := b.client.PutObject(b.bucketName, objectKey, reader, int64(objectSize), minio.PutObjectOptions{})
 	return err
 }
 
@@ -83,18 +84,44 @@ func (b *minioBucket) RemoveObject(objectKey string) error {
 
 func (b *minioBucket) RemoveObjects(objectKeys []string) error {
 	objectsCh := make(chan string, 1)
-	var errorCh <-chan minio.RemoveObjectError
 	go func() {
-		errorCh = b.client.RemoveObjects(b.bucketName, objectsCh)
+		for _, objectKey := range objectKeys {
+			objectsCh <- objectKey
+		}
+		close(objectsCh)
 	}()
 
-	for _, objectKey := range objectKeys {
-		objectsCh <- objectKey
-		err := <-errorCh
-		if err.Err != nil {
-			return err.Err
-		}
+	errorCh := b.client.RemoveObjects(b.bucketName, objectsCh)
+	for err := range errorCh {
+		return err.Err
 	}
 
 	return nil
+}
+
+func (b *minioBucket) PresignGetObject(objectKey string, expiresIn time.Duration) (string, error) {
+	url, err := b.client.PresignedGetObject(b.bucketName, objectKey, expiresIn, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return url.String(), nil
+}
+
+func (b *minioBucket) PresignHeadObject(objectKey string, expiresIn time.Duration) (string, error) {
+	url, err := b.client.PresignedHeadObject(b.bucketName, objectKey, expiresIn, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return url.String(), nil
+}
+
+func (b *minioBucket) PresignPutObject(objectKey string, expiresIn time.Duration) (string, error) {
+	url, err := b.client.PresignedPutObject(b.bucketName, objectKey, expiresIn)
+	if err != nil {
+		return "", err
+	}
+
+	return url.String(), nil
 }

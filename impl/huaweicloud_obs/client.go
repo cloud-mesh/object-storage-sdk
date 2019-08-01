@@ -5,17 +5,18 @@ import (
 	"github.com/inspii/object_storage_sdk/impl/huaweicloud_obs/obs"
 )
 
-func NewClient(ak, sk, endpoint string) (client *obsClient, err error) {
+func NewClient(location, endpoint, ak, sk string) (client *obsClient, err error) {
 	c, err := obs.New(ak, sk, endpoint)
 	if err != nil {
 		return
 	}
 
-	return &obsClient{c}, nil
+	return &obsClient{location: location, client: c}, nil
 }
 
 type obsClient struct {
-	client *obs.ObsClient
+	location string
+	client   *obs.ObsClient
 }
 
 func (c *obsClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error) {
@@ -24,6 +25,9 @@ func (c *obsClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error
 
 func (c *obsClient) MakeBucket(bucketName string, options ...sdk.Option) error {
 	input := &obs.CreateBucketInput{
+		BucketLocation: obs.BucketLocation{
+			Location: c.location,
+		},
 		Bucket: bucketName,
 	}
 

@@ -1,10 +1,10 @@
 package testcase
 
 import (
-	"bytes"
 	"fmt"
 	sdk "github.com/inspii/object_storage_sdk"
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 	"time"
 )
@@ -39,8 +39,8 @@ func ClientCopyObjectTest(t *testing.T, client sdk.BasicClient) {
 	objectKeyA := fmt.Sprintf("testobjecta%d.txt", time.Now().Unix())
 	objectKeyB := fmt.Sprintf("testobjectb%d.txt", time.Now().Unix())
 
-	buffer := bytes.NewBufferString("test content")
-	err = bucketA.PutObject(objectKeyA, buffer)
+	buffer := strings.NewReader("test content")
+	err = bucketA.PutObject(objectKeyA, buffer, buffer.Len())
 	assert.Nil(t, err)
 	defer bucketA.RemoveObject(objectKeyA)
 	err = client.CopyObject(bucketNameA, objectKeyA, bucketNameB, objectKeyB)

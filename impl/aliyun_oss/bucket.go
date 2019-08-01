@@ -55,7 +55,7 @@ func (c *ossBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProper
 	return
 }
 
-func (c *ossBucket) PutObject(objectKey string, reader io.Reader) error {
+func (c *ossBucket) PutObject(objectKey string, reader io.Reader, objectSize int) error {
 	return c.bucket.PutObject(objectKey, reader)
 }
 
