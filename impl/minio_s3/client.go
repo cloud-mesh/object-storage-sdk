@@ -5,8 +5,13 @@ import (
 	"github.com/minio/minio-go"
 )
 
-func NewClient(region, endpoint string, accessKeyID, secretAccessKey string, useSSL bool) (*minioClient, error) {
-	client, err := minio.New(endpoint, accessKeyID, secretAccessKey, useSSL)
+func NewClient(region, endpoint string, accessKeyID, secretAccessKey string, options ...option) (*minioClient, error) {
+	config := config{}
+	for _, option := range options {
+		option(&config)
+	}
+
+	client, err := minio.New(endpoint, accessKeyID, secretAccessKey, config.useSSL)
 	if err != nil {
 		return nil, err
 	}
@@ -14,12 +19,14 @@ func NewClient(region, endpoint string, accessKeyID, secretAccessKey string, use
 	return &minioClient{
 		region: region,
 		client: client,
+		config: config,
 	}, nil
 }
 
 type minioClient struct {
 	region string
 	client *minio.Client
+	config config
 }
 
 func (c *minioClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error) {

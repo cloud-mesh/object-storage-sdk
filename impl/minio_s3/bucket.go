@@ -1,7 +1,6 @@
 package minio_s3
 
 import (
-	"context"
 	sdk "github.com/inspii/object_storage_sdk"
 	"github.com/minio/minio-go"
 	"io"
@@ -41,7 +40,9 @@ func (b *minioBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err e
 }
 
 func (b *minioBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProperty, err error) {
-	ctx := context.Background()
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
 	doneCh := make(chan struct{})
 	go func() {
 		<-ctx.Done()

@@ -1,7 +1,6 @@
 package tencent_cos
 
 import (
-	"context"
 	sdk "github.com/inspii/object_storage_sdk"
 	"github.com/tencentyun/cos-go-sdk-v5"
 	"io"
@@ -28,7 +27,10 @@ type cosBucket struct {
 }
 
 func (b *cosBucket) GetObject(objectKey string) (io.ReadCloser, error) {
-	resp, err := b.client.Object.Get(context.TODO(), objectKey, nil)
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
+	resp, err := b.client.Object.Get(ctx, objectKey, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +39,10 @@ func (b *cosBucket) GetObject(objectKey string) (io.ReadCloser, error) {
 }
 
 func (b *cosBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err error) {
-	resp, err := b.client.Object.Head(context.TODO(), objectKey, nil)
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
+	resp, err := b.client.Object.Head(ctx, objectKey, nil)
 	if err != nil {
 		return
 	}
@@ -46,7 +51,10 @@ func (b *cosBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err err
 }
 
 func (b *cosBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProperty, err error) {
-	ret, _, err := b.client.Bucket.Get(context.TODO(), &cos.BucketGetOptions{
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
+	ret, _, err := b.client.Bucket.Get(ctx, &cos.BucketGetOptions{
 		Prefix: objectPrefix,
 	})
 	if err != nil {
@@ -73,21 +81,33 @@ func (b *cosBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProper
 }
 
 func (b *cosBucket) PutObject(objectKey string, reader io.Reader, objectSize int) error {
-	_, err := b.client.Object.Put(context.TODO(), objectKey, reader, nil)
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
+	_, err := b.client.Object.Put(ctx, objectKey, reader, nil)
 	return err
 }
 
 func (b *cosBucket) CopyObject(srcObjectKey, dstObjectKey string) error {
-	_, _, err := b.client.Object.Copy(context.TODO(), dstObjectKey, objectURI(b.region, b.appId, b.bucketName, srcObjectKey), nil)
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
+	_, _, err := b.client.Object.Copy(ctx, dstObjectKey, objectURI(b.region, b.appId, b.bucketName, srcObjectKey), nil)
 	return err
 }
 
 func (b *cosBucket) RemoveObject(objectKey string) error {
-	_, err := b.client.Object.Delete(context.TODO(), objectKey)
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
+	_, err := b.client.Object.Delete(ctx, objectKey)
 	return err
 }
 
 func (b *cosBucket) RemoveObjects(objectKeys []string) error {
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
 	objects := make([]cos.Object, 0, len(objectKeys))
 	for _, objectKey := range objectKeys {
 		objects = append(objects, cos.Object{
@@ -95,14 +115,17 @@ func (b *cosBucket) RemoveObjects(objectKeys []string) error {
 		})
 	}
 
-	_, _, err := b.client.Object.DeleteMulti(context.TODO(), &cos.ObjectDeleteMultiOptions{
+	_, _, err := b.client.Object.DeleteMulti(ctx, &cos.ObjectDeleteMultiOptions{
 		Objects: objects,
 	})
 	return err
 }
 
 func (b *cosBucket) PresignGetObject(objectKey string, expiresIn time.Duration) (string, error) {
-	url, err := b.client.Object.GetPresignedURL(context.TODO(), http.MethodGet, objectKey, b.secretId, b.secretKey, expiresIn, nil)
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
+	url, err := b.client.Object.GetPresignedURL(ctx, http.MethodGet, objectKey, b.secretId, b.secretKey, expiresIn, nil)
 	if err != nil {
 		return "", err
 	}
@@ -111,7 +134,10 @@ func (b *cosBucket) PresignGetObject(objectKey string, expiresIn time.Duration) 
 }
 
 func (b *cosBucket) PresignHeadObject(objectKey string, expiresIn time.Duration) (string, error) {
-	url, err := b.client.Object.GetPresignedURL(context.TODO(), http.MethodHead, objectKey, b.secretId, b.secretKey, expiresIn, nil)
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
+	url, err := b.client.Object.GetPresignedURL(ctx, http.MethodHead, objectKey, b.secretId, b.secretKey, expiresIn, nil)
 	if err != nil {
 		return "", err
 	}
@@ -120,7 +146,10 @@ func (b *cosBucket) PresignHeadObject(objectKey string, expiresIn time.Duration)
 }
 
 func (b *cosBucket) PresignPutObject(objectKey string, expiresIn time.Duration) (string, error) {
-	url, err := b.client.Object.GetPresignedURL(context.TODO(), http.MethodPut, objectKey, b.secretId, b.secretKey, expiresIn, nil)
+	ctx, cancel := b.config.NewContext()
+	defer cancel()
+
+	url, err := b.client.Object.GetPresignedURL(ctx, http.MethodPut, objectKey, b.secretId, b.secretKey, expiresIn, nil)
 	if err != nil {
 		return "", err
 	}

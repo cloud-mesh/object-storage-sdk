@@ -15,14 +15,14 @@ var (
 )
 
 func TestMinioClient_Bucket(t *testing.T) {
-	client, err := NewClient(testRegion, testEndpoint, testAccessKeyId, testAccessKeySecret, false)
+	client, err := NewClient(testRegion, testEndpoint, testAccessKeyId, testAccessKeySecret)
 	assert.Nil(t, err)
 
 	testcase.ClientBucketTest(t, client)
 }
 
 func TestMinioClient_CopyObject(t *testing.T) {
-	client, err := NewClient(testRegion, testEndpoint, testAccessKeyId, testAccessKeySecret, false)
+	client, err := NewClient(testRegion, testEndpoint, testAccessKeyId, testAccessKeySecret)
 	assert.Nil(t, err)
 
 	testcase.ClientCopyObjectTest(t, client)

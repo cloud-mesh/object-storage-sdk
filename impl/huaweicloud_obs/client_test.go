@@ -1,7 +1,7 @@
 package huaweicloud_obs
 
 import (
-	"fmt"
+	"github.com/inspii/object_storage_sdk/impl/huaweicloud_obs/obs"
 	"github.com/inspii/object_storage_sdk/testcase"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -16,16 +16,17 @@ var (
 )
 
 func TestObsClient_Bucket(t *testing.T) {
-	fmt.Println(testEndpoint)
-	client, err := NewClient(testLocation, testEndpoint, testAK, testSK)
+	obsClient, err := obs.New(testAK, testSK, testEndpoint)
 	assert.Nil(t, err)
+	client := NewClient(testLocation, obsClient)
 
 	testcase.ClientBucketTest(t, client)
 }
 
 func TestObsClient_CopyObject(t *testing.T) {
-	client, err := NewClient(testLocation, testEndpoint, testAK, testSK)
+	obsClient, err := obs.New(testAK, testSK, testEndpoint)
 	assert.Nil(t, err)
+	client := NewClient(testLocation, obsClient)
 
 	testcase.ClientCopyObjectTest(t, client)
 }

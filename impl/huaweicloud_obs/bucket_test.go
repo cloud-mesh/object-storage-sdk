@@ -3,6 +3,7 @@ package huaweicloud_obs
 import (
 	"fmt"
 	sdk "github.com/inspii/object_storage_sdk"
+	"github.com/inspii/object_storage_sdk/impl/huaweicloud_obs/obs"
 	"github.com/inspii/object_storage_sdk/testcase"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -45,8 +46,9 @@ func TestObsBucket_PresignPutObject(t *testing.T) {
 }
 
 func newTestBucket(t *testing.T) (bucket sdk.BasicBucket, destroy func()) {
-	client, err := NewClient(testLocation, testEndpoint, testAK, testSK)
+	obsClient, err := obs.New(testAK, testSK, testEndpoint)
 	assert.Nil(t, err)
+	client := NewClient(testLocation, obsClient)
 
 	bucketName := fmt.Sprintf("testbucket%d", time.Now().Unix())
 	err = client.MakeBucket(bucketName)

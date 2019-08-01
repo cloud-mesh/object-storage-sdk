@@ -23,6 +23,7 @@ func BucketObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 	assert.Nil(t, err)
 
 	err = bucket.RemoveObject(objectKey)
+	assert.Nil(t, err)
 }
 
 func BucketObjectsTest(t *testing.T, bucket sdk.BasicBucket) {

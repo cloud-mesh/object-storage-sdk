@@ -45,7 +45,7 @@ func TestMinioBucket_PresignPutObject(t *testing.T) {
 }
 
 func newTestBucket(t *testing.T) (bucket sdk.BasicBucket, destroy func()) {
-	client, err := NewClient(testRegion, testEndpoint, testAccessKeyId, testAccessKeySecret, false)
+	client, err := NewClient(testRegion, testEndpoint, testAccessKeyId, testAccessKeySecret)
 	assert.Nil(t, err)
 
 	bucketName := fmt.Sprintf("testbucket%d", time.Now().Unix())

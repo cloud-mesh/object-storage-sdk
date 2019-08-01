@@ -5,13 +5,8 @@ import (
 	"github.com/inspii/object_storage_sdk/impl/huaweicloud_obs/obs"
 )
 
-func NewClient(location, endpoint, ak, sk string) (client *obsClient, err error) {
-	c, err := obs.New(ak, sk, endpoint)
-	if err != nil {
-		return
-	}
-
-	return &obsClient{location: location, client: c}, nil
+func NewClient(location string, client *obs.ObsClient) *obsClient {
+	return &obsClient{location: location, client: client}
 }
 
 type obsClient struct {
