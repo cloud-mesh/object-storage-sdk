@@ -2,6 +2,7 @@ package object_storage_sdk
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -11,6 +12,8 @@ import (
 
 const tempFileSuffix = ".temp"
 const filePermMode = os.FileMode(0664) // Default file permission
+
+var BucketNotExist = errors.New("bucket doesn't exist")
 
 type ObjectMeta struct {
 	ContentType   string
@@ -41,9 +44,9 @@ func HeaderToObjectMeta(header http.Header) (objectMeta ObjectMeta, err error) {
 
 type BasicBucket interface {
 	GetObject(objectKey string) (io.ReadCloser, error)
-	StatObject(objectKey string) (object ObjectMeta, err error)
+	HeadObject(objectKey string) (object ObjectMeta, err error)
 	ListObjects(objectPrefix string) (objects []ObjectProperty, err error)
-	PutObject(objectKey string, reader io.Reader, objectSize int) error
+	PutObject(objectKey string, reader io.ReadSeeker) error
 	CopyObject(srcObjectKey, dstObjectKey string) error
 	RemoveObject(objectKey string) error
 	RemoveObjects(objectKeys []string) error
@@ -60,7 +63,7 @@ type PostAbleBucket interface {
 	Post()
 }
 
-type MultipartAbleBucket interface {
+type MultipartUploadAbleBucket interface {
 	ListParts()
 	UploadPart()
 	InitMultipartUpload()
@@ -86,12 +89,7 @@ func FPutObject(ctx context.Context, bucket BasicBucket, objectKey string, local
 	}
 	defer fd.Close()
 
-	fileInfo, err := fd.Stat()
-	if err != nil {
-		return err
-	}
-
-	return bucket.PutObject(objectKey, fd, int(fileInfo.Size()))
+	return bucket.PutObject(objectKey, fd)
 }
 
 func HeadObjectWithURL(signedURL string, timeout time.Duration) (http.Header, error) {

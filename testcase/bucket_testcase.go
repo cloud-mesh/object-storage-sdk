@@ -13,10 +13,10 @@ import (
 func BucketObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 	objectKey := fmt.Sprintf("testobjecta%d.txt", time.Now().Unix())
 	buffer := strings.NewReader("test content")
-	err := bucket.PutObject(objectKey, buffer, buffer.Len())
+	err := bucket.PutObject(objectKey, buffer)
 	assert.Nil(t, err)
 
-	_, err = bucket.StatObject(objectKey)
+	_, err = bucket.HeadObject(objectKey)
 	assert.Nil(t, err)
 
 	_, err = bucket.GetObject(objectKey)
@@ -28,13 +28,12 @@ func BucketObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 
 func BucketObjectsTest(t *testing.T, bucket sdk.BasicBucket) {
 	buffer := strings.NewReader("test content")
-	bufferLen := buffer.Len()
 	objectKeyA := fmt.Sprintf("testobjecta%d.txt", time.Now().Unix())
 	objectKeyB := fmt.Sprintf("testobjectb%d.txt", time.Now().Unix())
 	objectKeyC := fmt.Sprintf("testobjectc%d.txt", time.Now().Unix())
-	err := bucket.PutObject(objectKeyA, buffer, bufferLen)
+	err := bucket.PutObject(objectKeyA, buffer)
 	assert.Nil(t, err)
-	err = bucket.PutObject(objectKeyB, buffer, bufferLen)
+	err = bucket.PutObject(objectKeyB, buffer)
 	assert.Nil(t, err)
 	err = bucket.CopyObject(objectKeyA, objectKeyC)
 	assert.Nil(t, err)
@@ -52,7 +51,7 @@ func BucketObjectsTest(t *testing.T, bucket sdk.BasicBucket) {
 }
 
 func BucketPresignHeadObjectTest(t *testing.T, bucket sdk.BasicBucket) {
-	presignBucket, ok := bucket.(sdk.PresignBucket)
+	presignBucket, ok := bucket.(sdk.PresignAbleBucket)
 	if !ok {
 		t.Skip()
 	}
@@ -60,7 +59,7 @@ func BucketPresignHeadObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 	objectKey := fmt.Sprintf("testobject%d.txt", time.Now().Unix())
 	content := "test content"
 	buffer := strings.NewReader(content)
-	err := bucket.PutObject(objectKey, buffer, buffer.Len())
+	err := bucket.PutObject(objectKey, buffer)
 	assert.Nil(t, err)
 	defer bucket.RemoveObject(objectKey)
 
@@ -72,7 +71,7 @@ func BucketPresignHeadObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 }
 
 func BucketPresignGetObjectTest(t *testing.T, bucket sdk.BasicBucket) {
-	presignBucket, ok := bucket.(sdk.PresignBucket)
+	presignBucket, ok := bucket.(sdk.PresignAbleBucket)
 	if !ok {
 		t.Skip()
 	}
@@ -80,7 +79,7 @@ func BucketPresignGetObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 	objectKey := fmt.Sprintf("testobject%d.txt", time.Now().Unix())
 	content := "test content"
 	buffer := strings.NewReader(content)
-	err := bucket.PutObject(objectKey, buffer, buffer.Len())
+	err := bucket.PutObject(objectKey, buffer)
 	assert.Nil(t, err)
 	defer bucket.RemoveObject(objectKey)
 
@@ -95,7 +94,7 @@ func BucketPresignGetObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 }
 
 func BucketPresignPutObjectTest(t *testing.T, bucket sdk.BasicBucket) {
-	presignBucket, ok := bucket.(sdk.PresignBucket)
+	presignBucket, ok := bucket.(sdk.PresignAbleBucket)
 	if !ok {
 		t.Skip()
 	}

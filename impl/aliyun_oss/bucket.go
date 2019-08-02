@@ -25,7 +25,7 @@ func (c *ossBucket) GetObject(objectKey string) (io.ReadCloser, error) {
 	return c.bucket.GetObject(objectKey)
 }
 
-func (c *ossBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err error) {
+func (c *ossBucket) HeadObject(objectKey string) (object sdk.ObjectMeta, err error) {
 	header, err := c.bucket.GetObjectMeta(objectKey)
 	if err != nil {
 		return
@@ -55,7 +55,7 @@ func (c *ossBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProper
 	return
 }
 
-func (c *ossBucket) PutObject(objectKey string, reader io.Reader, objectSize int) error {
+func (c *ossBucket) PutObject(objectKey string, reader io.ReadSeeker) error {
 	return c.bucket.PutObject(objectKey, reader)
 }
 

@@ -38,6 +38,19 @@ func (c *cosClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error
 	return newBucket(bucketName, c)
 }
 
+func (c *cosClient) HeadBucket(bucketName string) error {
+	ctx, cancel := c.config.NewContext()
+	defer cancel()
+
+	client, err := c.bucketClient(bucketName)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Bucket.Head(ctx)
+	return err
+}
+
 func (c *cosClient) MakeBucket(bucketName string, options ...sdk.Option) error {
 	ctx, cancel := c.config.NewContext()
 	defer cancel()

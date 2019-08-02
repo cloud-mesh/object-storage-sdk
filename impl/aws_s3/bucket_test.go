@@ -9,35 +9,35 @@ import (
 	"time"
 )
 
-func TestMinioBucket_Object(t *testing.T) {
+func TestS3Bucket_Object(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
 	testcase.BucketObjectTest(t, bucket)
 }
 
-func TestMinioBucket_Objects(t *testing.T) {
+func TestS3Bucket_Objects(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
 	testcase.BucketObjectsTest(t, bucket)
 }
 
-func TestMinioBucket_PresignHeadObject(t *testing.T) {
+func TestS3Bucket_PresignHeadObject(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
 	testcase.BucketPresignHeadObjectTest(t, bucket)
 }
 
-func TestMinioBucket_PresignGetObject(t *testing.T) {
+func TestS3Bucket_PresignGetObject(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
 	testcase.BucketPresignGetObjectTest(t, bucket)
 }
 
-func TestMinioBucket_PresignPutObject(t *testing.T) {
+func TestS3Bucket_PresignPutObject(t *testing.T) {
 	bucket, destroy := newTestBucket(t)
 	defer destroy()
 
@@ -45,7 +45,7 @@ func TestMinioBucket_PresignPutObject(t *testing.T) {
 }
 
 func newTestBucket(t *testing.T) (bucket sdk.BasicBucket, destroy func()) {
-	client, err := NewClient(testRegion, testEndpoint, testAccessKeyId, testAccessKeySecret)
+	client, err := NewClient(testRegion, testEndpoint, testAccessKeyId, testAccessKeySecret, nil)
 	assert.Nil(t, err)
 
 	bucketName := fmt.Sprintf("testbucket%d", time.Now().Unix())

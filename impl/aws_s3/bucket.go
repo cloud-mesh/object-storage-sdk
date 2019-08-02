@@ -1,63 +1,69 @@
 package aws_s3
 
 import (
+	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	sdk "github.com/inspii/object_storage_sdk"
-	"github.com/minio/minio-go"
 	"io"
 	"time"
 )
 
-func newMinioBucket(bucketName string, client *minioClient) *minioBucket {
-	return &minioBucket{bucketName, client}
+func newS3Bucket(bucketName string, client *s3Client) *s3Bucket {
+	return &s3Bucket{bucketName, client}
 }
 
-type minioBucket struct {
+type s3Bucket struct {
 	bucketName string
-	*minioClient
+	*s3Client
 }
 
-func (b *minioBucket) GetObject(objectKey string) (io.ReadCloser, error) {
-	obj, err := b.client.GetObject(b.bucketName, objectKey, minio.GetObjectOptions{})
+func (b *s3Bucket) GetObject(objectKey string) (io.ReadCloser, error) {
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(b.bucketName),
+		Key:    aws.String(objectKey),
+	}
+	output, err := b.client.GetObject(input)
 	if err != nil {
 		return nil, err
 	}
 
-	return obj, err
+	return output.Body, nil
 }
 
-func (b *minioBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err error) {
-	info, err := b.client.StatObject(b.bucketName, objectKey, minio.StatObjectOptions{})
+func (b *s3Bucket) HeadObject(objectKey string) (object sdk.ObjectMeta, err error) {
+	input := &s3.HeadObjectInput{
+		Bucket: aws.String(b.bucketName),
+		Key:    aws.String(objectKey),
+	}
+	output, err := b.client.HeadObject(input)
 	if err != nil {
 		return
 	}
 
 	return sdk.ObjectMeta{
-		ContentType:   info.ContentType,
-		ContentLength: int(info.Size),
-		ETag:          info.ETag,
-		LastModified:  info.LastModified,
+		ContentType:   *output.ContentType,
+		ContentLength: int(*output.ContentLength),
+		ETag:          *output.ETag,
+		LastModified:  *output.LastModified,
 	}, nil
 }
 
-func (b *minioBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProperty, err error) {
-	ctx, cancel := b.config.NewContext()
-	defer cancel()
+func (b *s3Bucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProperty, err error) {
+	input := &s3.ListObjectsInput{
+		Bucket: aws.String(b.bucketName),
+		Prefix: aws.String(objectPrefix),
+	}
+	output, err := b.client.ListObjects(input)
 
-	doneCh := make(chan struct{})
-	go func() {
-		<-ctx.Done()
-		close(doneCh)
-	}()
-
-	objectsChan := b.client.ListObjects(b.bucketName, objectPrefix, true, doneCh)
-	for object := range objectsChan {
+	for _, object := range output.Contents {
 		objects = append(objects, sdk.ObjectProperty{
-			ObjectKey: object.Key,
+			ObjectKey: *object.Key,
 			ObjectMeta: sdk.ObjectMeta{
-				ContentType:   object.ContentType,
-				ContentLength: int(object.Size),
-				ETag:          object.ETag,
-				LastModified:  object.LastModified,
+				ContentType:   "",
+				ContentLength: int(*object.Size),
+				ETag:          *object.ETag,
+				LastModified:  *object.LastModified,
 			},
 		})
 	}
@@ -65,64 +71,89 @@ func (b *minioBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProp
 	return
 }
 
-func (b *minioBucket) PutObject(objectKey string, reader io.Reader, objectSize int) error {
-	_, err := b.client.PutObject(b.bucketName, objectKey, reader, int64(objectSize), minio.PutObjectOptions{})
+func (b *s3Bucket) PutObject(objectKey string, reader io.ReadSeeker) error {
+	input := &s3.PutObjectInput{
+		Bucket: aws.String(b.bucketName),
+		Key:    aws.String(objectKey),
+		Body:   reader,
+	}
+	_, err := b.client.PutObject(input)
 	return err
 }
 
-func (b *minioBucket) CopyObject(srcObjectKey, dstObjectKey string) error {
-	dst, err := minio.NewDestinationInfo(b.bucketName, dstObjectKey, nil, nil)
-	if err != nil {
-		return err
+func (b *s3Bucket) CopyObject(srcObjectKey, dstObjectKey string) error {
+	copySource := fmt.Sprintf("%s/%s", b.bucketName, srcObjectKey)
+	input := &s3.CopyObjectInput{
+		Bucket:     aws.String(b.bucketName),
+		Key:        aws.String(dstObjectKey),
+		CopySource: &copySource,
 	}
-	src := minio.NewSourceInfo(b.bucketName, srcObjectKey, nil)
-	return b.client.CopyObject(dst, src)
+	_, err := b.client.CopyObject(input)
+	return err
 }
 
-func (b *minioBucket) RemoveObject(objectKey string) error {
-	return b.client.RemoveObject(b.bucketName, objectKey)
-}
-
-func (b *minioBucket) RemoveObjects(objectKeys []string) error {
-	objectsCh := make(chan string, 1)
-	go func() {
-		for _, objectKey := range objectKeys {
-			objectsCh <- objectKey
-		}
-		close(objectsCh)
-	}()
-
-	errorCh := b.client.RemoveObjects(b.bucketName, objectsCh)
-	for err := range errorCh {
-		return err.Err
+func (b *s3Bucket) RemoveObject(objectKey string) error {
+	input := &s3.DeleteObjectInput{
+		Bucket: aws.String(b.bucketName),
+		Key:    aws.String(objectKey),
 	}
-
-	return nil
+	_, err := b.client.DeleteObject(input)
+	return err
 }
 
-func (b *minioBucket) PresignGetObject(objectKey string, expiresIn time.Duration) (string, error) {
-	url, err := b.client.PresignedGetObject(b.bucketName, objectKey, expiresIn, nil)
-	if err != nil {
-		return "", err
+func (b *s3Bucket) RemoveObjects(objectKeys []string) error {
+	objs := make([]*s3.ObjectIdentifier, 0, len(objectKeys))
+	for _, objectKey := range objectKeys {
+		objs = append(objs, &s3.ObjectIdentifier{
+			Key: aws.String(objectKey),
+		})
 	}
 
-	return url.String(), nil
-}
-
-func (b *minioBucket) PresignHeadObject(objectKey string, expiresIn time.Duration) (string, error) {
-	url, err := b.client.PresignedHeadObject(b.bucketName, objectKey, expiresIn, nil)
-	if err != nil {
-		return "", err
+	input := &s3.DeleteObjectsInput{
+		Bucket: aws.String(b.bucketName),
+		Delete: &s3.Delete{
+			Objects: objs,
+		},
 	}
-
-	return url.String(), nil
+	_, err := b.client.DeleteObjects(input)
+	return err
 }
 
-func (b *minioBucket) PresignPutObject(objectKey string, expiresIn time.Duration) (string, error) {
-	url, err := b.client.PresignedPutObject(b.bucketName, objectKey, expiresIn)
+func (b *s3Bucket) PresignGetObject(objectKey string, expiresIn time.Duration) (string, error) {
+	req, _ := b.client.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(b.bucketName),
+		Key:    aws.String(objectKey),
+	})
+	url, _, err := req.PresignRequest(expiresIn)
 	if err != nil {
 		return "", err
 	}
 
-	return url.String(), nil
+	return url, nil
+}
+
+func (b *s3Bucket) PresignHeadObject(objectKey string, expiresIn time.Duration) (string, error) {
+	req, _ := b.client.HeadObjectRequest(&s3.HeadObjectInput{
+		Bucket: aws.String(b.bucketName),
+		Key:    aws.String(objectKey),
+	})
+	url, _, err := req.PresignRequest(expiresIn)
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
+}
+
+func (b *s3Bucket) PresignPutObject(objectKey string, expiresIn time.Duration) (string, error) {
+	req, _ := b.client.PutObjectRequest(&s3.PutObjectInput{
+		Bucket: aws.String(b.bucketName),
+		Key:    aws.String(objectKey),
+	})
+	url, _, err := req.PresignRequest(expiresIn)
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
 }

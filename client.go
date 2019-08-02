@@ -14,17 +14,16 @@ type BucketProperties struct {
 type BasicClient interface {
 	Bucket(bucketName string) (bucket BasicBucket, err error)
 	MakeBucket(bucketName string, options ...Option) error
+	HeadBucket(bucketName string) error
 	ListBucket(options ...Option) (buckets []BucketProperties, err error)
 	RemoveBucket(bucketName string) error
 	CopyObject(srcBucketName, srcObjectKey, dstBucketName, dstObjectKey string) error
 }
 
 type PolicyAbleClient interface {
-	// HeadBucket()
 	// GetBucketACL()
 	// PutBucketACL()
 	// GetBucketLocation
-
 	GetBucketPolicy(bucketName string) (policy string, err error)
 	SetBucketPolicy(bucketName, policy string) error
 }

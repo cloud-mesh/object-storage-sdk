@@ -18,6 +18,11 @@ func (c *obsClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error
 	return newObsBucket(bucketName, c.client)
 }
 
+func (c *obsClient) HeadBucket(bucketName string) error {
+	_, err := c.client.HeadBucket(bucketName)
+	return err
+}
+
 func (c *obsClient) MakeBucket(bucketName string, options ...sdk.Option) error {
 	input := &obs.CreateBucketInput{
 		BucketLocation: obs.BucketLocation{

@@ -23,6 +23,18 @@ func (c *ossClient) Bucket(bucketName string) (sdk.BasicBucket, error) {
 	return newOssBucket(bucketName, c)
 }
 
+func (c *ossClient) HeadBucket(bucketName string) error {
+	exist, err := c.client.IsBucketExist(bucketName)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		return sdk.BucketNotExist
+	}
+
+	return nil
+}
+
 func (c *ossClient) MakeBucket(bucketName string, options ...sdk.Option) error {
 	return c.client.CreateBucket(bucketName)
 }
