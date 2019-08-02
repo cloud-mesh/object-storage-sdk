@@ -1,4 +1,4 @@
-package minio_s3
+package aws_s3
 
 import (
 	"context"

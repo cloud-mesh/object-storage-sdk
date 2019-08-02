@@ -19,7 +19,12 @@ type BasicClient interface {
 	CopyObject(srcBucketName, srcObjectKey, dstBucketName, dstObjectKey string) error
 }
 
-type PolicyClient interface {
+type PolicyAbleClient interface {
+	// HeadBucket()
+	// GetBucketACL()
+	// PutBucketACL()
+	// GetBucketLocation
+
 	GetBucketPolicy(bucketName string) (policy string, err error)
 	SetBucketPolicy(bucketName, policy string) error
 }

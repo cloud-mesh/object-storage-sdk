@@ -49,11 +49,25 @@ type BasicBucket interface {
 	RemoveObjects(objectKeys []string) error
 }
 
-type PresignBucket interface {
+type PresignAbleBucket interface {
 	PresignGetObject(objectKey string, expiresIn time.Duration) (signedURL string, err error)
 	PresignHeadObject(objectKey string, expiresIn time.Duration) (signedURL string, err error)
 	PresignPutObject(objectKey string, expiresIn time.Duration) (signedURL string, err error)
 }
+
+/*
+type PostAbleBucket interface {
+	Post()
+}
+
+type MultipartAbleBucket interface {
+	ListParts()
+	UploadPart()
+	InitMultipartUpload()
+	ListMultipartUpload()
+	AboutMultipartUpload()
+	CompleteMultipartUpload()
+}*/
 
 func FGetObject(bucket BasicBucket, objectKey string, localFilePath string) error {
 	body, err := bucket.GetObject(objectKey)
