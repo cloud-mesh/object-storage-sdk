@@ -51,6 +51,53 @@ func (c *cosClient) HeadBucket(bucketName string) error {
 	return err
 }
 
+func (c *cosClient) GetBucketACL(bucketName string) (acl sdk.ACLType, err error) {
+	ctx, cancel := c.config.NewContext()
+	defer cancel()
+
+	client, err := c.bucketClient(bucketName)
+	if err != nil {
+		return
+	}
+	_, _, err = client.Bucket.GetACL(ctx)
+	if err != nil {
+		return
+	}
+
+	panic("not implemented")
+}
+
+func (c *cosClient) PutBucketACL(bucketName string, acl sdk.ACLType) error {
+	ctx, cancel := c.config.NewContext()
+	defer cancel()
+
+	client, err := c.bucketClient(bucketName)
+	if err != nil {
+		return err
+	}
+
+	input := &cos.BucketPutACLOptions{
+		Header: &cos.ACLHeaderOptions{
+			XCosACL: cosAcl(acl),
+		},
+	}
+	_, err = client.Bucket.PutACL(ctx, input)
+	return err
+}
+
+func (c *cosClient) GetBucketLocation(bucketName string) (location string, err error) {
+	ctx, cancel := c.config.NewContext()
+	defer cancel()
+
+	client, err := c.bucketClient(bucketName)
+	if err != nil {
+		return
+	}
+
+	output, _, err := client.Bucket.GetLocation(ctx)
+	return output.Location, nil
+}
+
 func (c *cosClient) MakeBucket(bucketName string, options ...sdk.Option) error {
 	ctx, cancel := c.config.NewContext()
 	defer cancel()
@@ -59,7 +106,15 @@ func (c *cosClient) MakeBucket(bucketName string, options ...sdk.Option) error {
 	if err != nil {
 		return err
 	}
-	_, err = client.Bucket.Put(ctx, nil)
+
+	var option *cos.BucketPutOptions
+	config := sdk.GetConfig(options...)
+	if config.ACLType != "" {
+		option = &cos.BucketPutOptions{
+			XCosACL: cosAcl(config.ACLType),
+		}
+	}
+	_, err = client.Bucket.Put(ctx, option)
 	return err
 }
 

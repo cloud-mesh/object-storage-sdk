@@ -40,7 +40,9 @@ func (c *s3Client) Bucket(bucketName string) (bucket sdk.BasicBucket, err error)
 }
 
 func (c *s3Client) MakeBucket(bucketName string, options ...sdk.Option) error {
+	config := sdk.GetConfig(options...)
 	input := &s3.CreateBucketInput{
+		ACL:    aws.String(awsAcl(config.ACLType)),
 		Bucket: aws.String(bucketName),
 		CreateBucketConfiguration: &s3.CreateBucketConfiguration{
 			LocationConstraint: c.config.Region,
@@ -66,6 +68,41 @@ func (c *s3Client) HeadBucket(bucketName string) error {
 	}
 
 	return err
+}
+
+func (c *s3Client) GetBucketACL(bucketName string) (acl sdk.ACLType, err error) {
+	input := &s3.GetBucketAclInput{
+		Bucket: aws.String(bucketName),
+	}
+	_, err = c.client.GetBucketAcl(input)
+	if err != nil {
+		return
+	}
+
+	panic("not implemented")
+}
+
+func (c *s3Client) PutBucketACL(bucketName string, acl sdk.ACLType) error {
+	input := &s3.PutBucketAclInput{
+		Bucket: aws.String(bucketName),
+		ACL:    aws.String(awsAcl(acl)),
+	}
+	_, err := c.client.PutBucketAcl(input)
+
+	return err
+}
+
+func (c *s3Client) GetBucketLocation(bucketName string) (location string, err error) {
+	input := &s3.GetBucketLocationInput{
+		Bucket: aws.String(bucketName),
+	}
+
+	output, err := c.client.GetBucketLocation(input)
+	if err != nil {
+		return
+	}
+
+	return output.String(), nil
 }
 
 func (c *s3Client) ListBucket(options ...sdk.Option) (buckets []sdk.BucketProperties, err error) {

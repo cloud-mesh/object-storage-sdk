@@ -23,8 +23,39 @@ func (c *obsClient) HeadBucket(bucketName string) error {
 	return err
 }
 
+func (c *obsClient) GetBucketACL(bucketName string) (acl sdk.ACLType, err error) {
+	_, err = c.client.GetBucketAcl(bucketName)
+	if err != nil {
+		return
+	}
+
+	panic("not implemented")
+}
+
+func (c *obsClient) PutBucketACL(bucketName string, acl sdk.ACLType) error {
+	input := &obs.SetBucketAclInput{
+		Bucket: bucketName,
+		ACL:    obsAcl(acl),
+	}
+
+	_, err := c.client.SetBucketAcl(input)
+	return err
+}
+
+func (c *obsClient) GetBucketLocation(bucketName string) (location string, err error) {
+	output, err := c.client.GetBucketLocation(bucketName)
+	if err != nil {
+		return
+	}
+
+	return output.Location, nil
+}
+
 func (c *obsClient) MakeBucket(bucketName string, options ...sdk.Option) error {
+	config := sdk.GetConfig(options...)
+
 	input := &obs.CreateBucketInput{
+		ACL: obsAcl(config.ACLType),
 		BucketLocation: obs.BucketLocation{
 			Location: c.location,
 		},
@@ -67,22 +98,5 @@ func (c *obsClient) CopyObject(srcBucketName, srcObjectKey, dstBucketName, dstOb
 		CopySourceKey:    srcObjectKey,
 	}
 	_, err := c.client.CopyObject(input)
-	return err
-}
-
-func (c *obsClient) GetBucketPolicy(bucketName string) (policy string, err error) {
-	result, err := c.client.GetBucketPolicy(bucketName)
-	if err != nil {
-		return
-	}
-	return result.Policy, nil
-}
-
-func (c *obsClient) SetBucketPolicy(bucketName, policy string) error {
-	input := &obs.SetBucketPolicyInput{
-		Bucket: bucketName,
-		Policy: policy,
-	}
-	_, err := c.client.SetBucketPolicy(input)
 	return err
 }
