@@ -14,15 +14,20 @@ var (
 )
 
 func TestOssClient_Bucket(t *testing.T) {
-	client, err := NewClient(testEndpoint, testAccessKeyId, testAccessKeySecret)
-	assert.Nil(t, err)
+	client := newClient(t)
 
 	testcase.ClientBucketTest(t, client)
 }
 
 func TestOssClient_CopyObject(t *testing.T) {
+	client := newClient(t)
+
+	testcase.ClientCopyObjectTest(t, client)
+}
+
+func newClient(t *testing.T) *ossClient {
 	client, err := NewClient(testEndpoint, testAccessKeyId, testAccessKeySecret)
 	assert.Nil(t, err)
 
-	testcase.ClientCopyObjectTest(t, client)
+	return client
 }

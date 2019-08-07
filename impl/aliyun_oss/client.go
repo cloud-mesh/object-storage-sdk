@@ -23,8 +23,30 @@ func (c *ossClient) Bucket(bucketName string) (sdk.BasicBucket, error) {
 	return newOssBucket(bucketName, c)
 }
 
+func (c *ossClient) HeadBucket(bucketName string) error {
+	exist, err := c.client.IsBucketExist(bucketName)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		return sdk.BucketNotExist
+	}
+
+	return nil
+}
+
+func (c *ossClient) GetBucketLocation(bucketName string) (location string, err error) {
+	return c.client.GetBucketLocation(bucketName)
+}
+
 func (c *ossClient) MakeBucket(bucketName string, options ...sdk.Option) error {
-	return c.client.CreateBucket(bucketName)
+	var ossOptions []oss.Option
+	config := sdk.GetConfig(options...)
+	if config.ACLType != "" {
+		ossOptions = append(ossOptions, oss.ACL(ossAcl(config.ACLType)))
+	}
+
+	return c.client.CreateBucket(bucketName, ossOptions...)
 }
 
 func (c *ossClient) ListBucket(options ...sdk.Option) ([]sdk.BucketProperties, error) {
@@ -56,12 +78,4 @@ func (c *ossClient) CopyObject(srcBucketName, srcObjectKey, dstBucketName, dstOb
 
 	_, err = bucket.CopyObjectTo(dstBucketName, dstObjectKey, srcObjectKey)
 	return err
-}
-
-func (c *ossClient) GetBucketPolicy(bucketName string) (policy string, err error) {
-	return c.client.GetBucketPolicy(bucketName)
-}
-
-func (c *ossClient) SetBucketPolicy(bucketName, policy string) error {
-	return c.client.SetBucketPolicy(bucketName, policy)
 }

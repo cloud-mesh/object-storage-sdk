@@ -12,13 +12,21 @@ import (
 func ClientBucketTest(t *testing.T, client sdk.BasicClient) {
 	bucketName := fmt.Sprintf("testbucket%d", time.Now().Unix())
 	err := client.MakeBucket(bucketName)
+
+	err = client.HeadBucket(bucketName)
 	assert.Nil(t, err)
-	assertBucketExist(t, client, bucketName, true)
+
+	_, err = client.ListBucket()
+	assert.Nil(t, err)
+
+	_, err = client.GetBucketLocation(bucketName)
+	assert.Nil(t, err)
 
 	err = client.RemoveBucket(bucketName)
 	assert.Nil(t, err)
 	time.Sleep(time.Second)
-	assertBucketExist(t, client, bucketName, false)
+	err = client.HeadBucket(bucketName)
+	assert.NotNil(t, err)
 }
 
 func ClientCopyObjectTest(t *testing.T, client sdk.BasicClient) {
@@ -40,7 +48,7 @@ func ClientCopyObjectTest(t *testing.T, client sdk.BasicClient) {
 	objectKeyB := fmt.Sprintf("testobjectb%d.txt", time.Now().Unix())
 
 	buffer := strings.NewReader("test content")
-	err = bucketA.PutObject(objectKeyA, buffer, buffer.Len())
+	err = bucketA.PutObject(objectKeyA, buffer)
 	assert.Nil(t, err)
 	defer bucketA.RemoveObject(objectKeyA)
 	err = client.CopyObject(bucketNameA, objectKeyA, bucketNameB, objectKeyB)
@@ -48,16 +56,4 @@ func ClientCopyObjectTest(t *testing.T, client sdk.BasicClient) {
 	defer bucketB.RemoveObject(objectKeyB)
 	_, err = bucketB.GetObject(objectKeyB)
 	assert.Nil(t, err)
-}
-
-func assertBucketExist(t *testing.T, client sdk.BasicClient, bucketName string, isExist bool) {
-	buckets, err := client.ListBucket()
-	assert.Nil(t, err)
-	var bucketExist bool
-	for _, bucket := range buckets {
-		if bucket.Name == bucketName {
-			bucketExist = true
-		}
-	}
-	assert.Equal(t, isExist, bucketExist)
 }

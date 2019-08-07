@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func newBucket(bucketName string, client *cosClient) (*cosBucket, error) {
+func newCosBucket(bucketName string, client *cosClient) (*cosBucket, error) {
 	c, err := client.bucketClient(bucketName)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (b *cosBucket) GetObject(objectKey string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-func (b *cosBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err error) {
+func (b *cosBucket) HeadObject(objectKey string) (object sdk.ObjectMeta, err error) {
 	ctx, cancel := b.config.NewContext()
 	defer cancel()
 
@@ -80,7 +80,7 @@ func (b *cosBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProper
 	return
 }
 
-func (b *cosBucket) PutObject(objectKey string, reader io.Reader, objectSize int) error {
+func (b *cosBucket) PutObject(objectKey string, reader io.ReadSeeker) error {
 	ctx, cancel := b.config.NewContext()
 	defer cancel()
 

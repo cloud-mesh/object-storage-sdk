@@ -31,7 +31,7 @@ func (b *obsBucket) GetObject(objectKey string) (io.ReadCloser, error) {
 	return output.Body, nil
 }
 
-func (b *obsBucket) StatObject(objectKey string) (object sdk.ObjectMeta, err error) {
+func (b *obsBucket) HeadObject(objectKey string) (object sdk.ObjectMeta, err error) {
 	input := &obs.GetObjectMetadataInput{
 		Bucket: b.bucketName,
 		Key:    objectKey,
@@ -62,21 +62,21 @@ func (b *obsBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProper
 	}
 
 	for _, object := range output.Contents {
-		property, err := b.StatObject(object.Key)
-		if err != nil {
-			return nil, err
-		}
-
 		objects = append(objects, sdk.ObjectProperty{
-			ObjectKey:  object.Key,
-			ObjectMeta: property,
+			ObjectKey: object.Key,
+			ObjectMeta: sdk.ObjectMeta{
+				ContentType:   "",
+				ContentLength: int(object.Size),
+				ETag:          object.ETag,
+				LastModified:  object.LastModified,
+			},
 		})
 	}
 
 	return
 }
 
-func (b *obsBucket) PutObject(objectKey string, reader io.Reader, objectSize int) error {
+func (b *obsBucket) PutObject(objectKey string, reader io.ReadSeeker) error {
 	input := &obs.PutObjectInput{
 		PutObjectBasicInput: obs.PutObjectBasicInput{
 			ObjectOperationInput: obs.ObjectOperationInput{
@@ -171,3 +171,5 @@ func (b *obsBucket) PresignPutObject(objectKey string, expiresIn time.Duration) 
 
 	return output.SignedUrl, nil
 }
+
+

@@ -16,17 +16,20 @@ var (
 )
 
 func TestObsClient_Bucket(t *testing.T) {
-	obsClient, err := obs.New(testAK, testSK, testEndpoint)
-	assert.Nil(t, err)
-	client := NewClient(testLocation, obsClient)
+	client := newClient(t)
 
 	testcase.ClientBucketTest(t, client)
 }
 
 func TestObsClient_CopyObject(t *testing.T) {
-	obsClient, err := obs.New(testAK, testSK, testEndpoint)
-	assert.Nil(t, err)
-	client := NewClient(testLocation, obsClient)
+	client := newClient(t)
 
 	testcase.ClientCopyObjectTest(t, client)
+}
+
+func newClient(t *testing.T) *obsClient {
+	obsClient, err := obs.New(testAK, testSK, testEndpoint)
+	assert.Nil(t, err)
+
+	return NewClient(testLocation, obsClient)
 }
