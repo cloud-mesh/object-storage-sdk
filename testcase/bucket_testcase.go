@@ -1,6 +1,7 @@
 package testcase
 
 import (
+	"crypto/md5"
 	"fmt"
 	sdk "github.com/inspii/object_storage_sdk"
 	"github.com/stretchr/testify/assert"
@@ -114,4 +115,21 @@ func BucketPresignPutObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 	bytes, err := ioutil.ReadAll(reader)
 	assert.Nil(t, err)
 	assert.Equal(t, content, string(bytes))
+}
+
+func NewTestBucket(t *testing.T, client sdk.BasicClient) (bucket sdk.BasicBucket, destroy func()) {
+	bucketName := fmt.Sprintf("testbucket%d", time.Now().Unix())
+	err := client.MakeBucket(bucketName)
+	assert.Nil(t, err)
+
+	bucket, err = client.Bucket(bucketName)
+	return bucket, func() {
+		time.Sleep(time.Second)
+		err := client.RemoveBucket(bucketName)
+		assert.Nil(t, err)
+	}
+}
+
+func md5str(str string) string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(str)))
 }

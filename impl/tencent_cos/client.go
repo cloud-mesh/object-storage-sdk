@@ -35,7 +35,7 @@ type cosClient struct {
 }
 
 func (c *cosClient) Bucket(bucketName string) (bucket sdk.BasicBucket, err error) {
-	return newBucket(bucketName, c)
+	return newCosBucket(bucketName, c)
 }
 
 func (c *cosClient) HeadBucket(bucketName string) error {
@@ -48,40 +48,6 @@ func (c *cosClient) HeadBucket(bucketName string) error {
 	}
 
 	_, err = client.Bucket.Head(ctx)
-	return err
-}
-
-func (c *cosClient) GetBucketACL(bucketName string) (acl sdk.ACLType, err error) {
-	ctx, cancel := c.config.NewContext()
-	defer cancel()
-
-	client, err := c.bucketClient(bucketName)
-	if err != nil {
-		return
-	}
-	_, _, err = client.Bucket.GetACL(ctx)
-	if err != nil {
-		return
-	}
-
-	panic("not implemented")
-}
-
-func (c *cosClient) PutBucketACL(bucketName string, acl sdk.ACLType) error {
-	ctx, cancel := c.config.NewContext()
-	defer cancel()
-
-	client, err := c.bucketClient(bucketName)
-	if err != nil {
-		return err
-	}
-
-	input := &cos.BucketPutACLOptions{
-		Header: &cos.ACLHeaderOptions{
-			XCosACL: cosAcl(acl),
-		},
-	}
-	_, err = client.Bucket.PutACL(ctx, input)
 	return err
 }
 

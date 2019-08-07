@@ -1,63 +1,48 @@
 package huaweicloud_obs
 
 import (
-	"fmt"
 	sdk "github.com/inspii/object_storage_sdk"
-	"github.com/inspii/object_storage_sdk/impl/huaweicloud_obs/obs"
 	"github.com/inspii/object_storage_sdk/testcase"
-	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
 )
 
 func TestObsBucket_Object(t *testing.T) {
-	bucket, destroy := newTestBucket(t)
+	bucket, destroy := newBucket(t)
 	defer destroy()
 
 	testcase.BucketObjectTest(t, bucket)
 }
 
 func TestObsBucket_Objects(t *testing.T) {
-	bucket, destroy := newTestBucket(t)
+	bucket, destroy := newBucket(t)
 	defer destroy()
 
 	testcase.BucketObjectsTest(t, bucket)
 }
 
 func TestObsBucket_PresignHeadObject(t *testing.T) {
-	bucket, destroy := newTestBucket(t)
+	bucket, destroy := newBucket(t)
 	defer destroy()
 
 	testcase.BucketPresignHeadObjectTest(t, bucket)
 }
 
 func TestObsBucket_PresignGetObject(t *testing.T) {
-	bucket, destroy := newTestBucket(t)
+	bucket, destroy := newBucket(t)
 	defer destroy()
 
 	testcase.BucketPresignGetObjectTest(t, bucket)
 }
 
 func TestObsBucket_PresignPutObject(t *testing.T) {
-	bucket, destroy := newTestBucket(t)
+	bucket, destroy := newBucket(t)
 	defer destroy()
 
 	testcase.BucketPresignPutObjectTest(t, bucket)
 }
 
-func newTestBucket(t *testing.T) (bucket sdk.BasicBucket, destroy func()) {
-	obsClient, err := obs.New(testAK, testSK, testEndpoint)
-	assert.Nil(t, err)
-	client := NewClient(testLocation, obsClient)
+func newBucket(t *testing.T) (bucket sdk.BasicBucket, destroy func()) {
+	client := newClient(t)
 
-	bucketName := fmt.Sprintf("testbucket%d", time.Now().Unix())
-	err = client.MakeBucket(bucketName)
-	assert.Nil(t, err)
-
-	bucket, err = client.Bucket(bucketName)
-	return bucket, func() {
-		time.Sleep(time.Second)
-		err := client.RemoveBucket(bucketName)
-		assert.Nil(t, err)
-	}
+	return testcase.NewTestBucket(t, client)
 }

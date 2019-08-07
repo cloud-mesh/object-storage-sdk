@@ -19,6 +19,9 @@ func ClientBucketTest(t *testing.T, client sdk.BasicClient) {
 	_, err = client.ListBucket()
 	assert.Nil(t, err)
 
+	_, err = client.GetBucketLocation(bucketName)
+	assert.Nil(t, err)
+
 	err = client.RemoveBucket(bucketName)
 	assert.Nil(t, err)
 	time.Sleep(time.Second)

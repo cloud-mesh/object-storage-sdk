@@ -23,25 +23,6 @@ func (c *obsClient) HeadBucket(bucketName string) error {
 	return err
 }
 
-func (c *obsClient) GetBucketACL(bucketName string) (acl sdk.ACLType, err error) {
-	_, err = c.client.GetBucketAcl(bucketName)
-	if err != nil {
-		return
-	}
-
-	panic("not implemented")
-}
-
-func (c *obsClient) PutBucketACL(bucketName string, acl sdk.ACLType) error {
-	input := &obs.SetBucketAclInput{
-		Bucket: bucketName,
-		ACL:    obsAcl(acl),
-	}
-
-	_, err := c.client.SetBucketAcl(input)
-	return err
-}
-
 func (c *obsClient) GetBucketLocation(bucketName string) (location string, err error) {
 	output, err := c.client.GetBucketLocation(bucketName)
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func newBucket(bucketName string, client *cosClient) (*cosBucket, error) {
+func newCosBucket(bucketName string, client *cosClient) (*cosBucket, error) {
 	c, err := client.bucketClient(bucketName)
 	if err != nil {
 		return nil, err

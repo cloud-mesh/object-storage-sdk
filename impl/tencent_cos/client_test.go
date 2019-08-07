@@ -14,11 +14,16 @@ var (
 )
 
 func TestCosClient_Bucket(t *testing.T) {
-	client := NewClient(testRegion, testAppId, testSecretId, testSecretKey)
+	client := newClient()
 	testcase.ClientBucketTest(t, client)
 }
 
 func TestCosClient_CopyObject(t *testing.T) {
-	client := NewClient(testRegion, testAppId, testSecretId, testSecretKey)
+	client := newClient()
 	testcase.ClientCopyObjectTest(t, client)
+}
+
+func newClient() *cosClient {
+	client := NewClient(testRegion, testAppId, testSecretId, testSecretKey)
+	return client
 }

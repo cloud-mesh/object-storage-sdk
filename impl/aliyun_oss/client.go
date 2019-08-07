@@ -35,20 +35,6 @@ func (c *ossClient) HeadBucket(bucketName string) error {
 	return nil
 }
 
-func (c *ossClient) GetBucketACL(bucketName string) (acl sdk.ACLType, err error) {
-	result, err := c.client.GetBucketACL(bucketName)
-	if err != nil {
-		return
-	}
-	acl = sdkAcl(oss.ACLType(result.ACL))
-	return
-}
-
-func (c *ossClient) PutBucketACL(bucketName string, acl sdk.ACLType) error {
-	ossAcl := ossAcl(acl)
-	return c.client.SetBucketACL(bucketName, ossAcl)
-}
-
 func (c *ossClient) GetBucketLocation(bucketName string) (location string, err error) {
 	return c.client.GetBucketLocation(bucketName)
 }
