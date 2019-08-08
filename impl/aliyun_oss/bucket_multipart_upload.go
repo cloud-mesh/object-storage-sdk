@@ -35,10 +35,10 @@ func (c *ossBucket) InitMultipartUpload(objectKey string) (uploadId string, err 
 	return result.UploadID, nil
 }
 
-func (c *ossBucket) UploadPart(objectKey, uploadId string, partNum int, reader io.ReadSeeker) error {
+func (c *ossBucket) UploadPart(objectKey, uploadId string, partNum int, reader io.ReadSeeker) (string, error) {
 	partSize, err := aws.SeekerLen(reader)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	imur := oss.InitiateMultipartUploadResult{
@@ -46,8 +46,12 @@ func (c *ossBucket) UploadPart(objectKey, uploadId string, partNum int, reader i
 		Key:      objectKey,
 		UploadID: uploadId,
 	}
-	_, err = c.bucket.UploadPart(imur, reader, partSize, partNum)
-	return err
+	result, err := c.bucket.UploadPart(imur, reader, partSize, partNum)
+	if err != nil {
+		return "", err
+	}
+
+	return result.ETag, nil
 }
 
 func (c *ossBucket) ListParts(objectKey string, uploadId string) (parts []sdk.Part, err error) {

@@ -92,8 +92,8 @@ func (c *s3Client) ListBucket(options ...sdk.Option) (buckets []sdk.BucketProper
 
 	for _, bucket := range output.Buckets {
 		buckets = append(buckets, sdk.BucketProperties{
-			Name:      *bucket.Name,
-			CreatedAt: *bucket.CreationDate,
+			Name:      aws.StringValue(bucket.Name),
+			CreatedAt: aws.TimeValue(bucket.CreationDate),
 		})
 	}
 	return

@@ -1,7 +1,6 @@
 package object_storage_sdk
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -55,7 +54,7 @@ type PresignAbleBucket interface {
 }
 
 type PresignPostAbleBucket interface {
-	PresignPostObject(ctx context.Context, objectKey string, expiresIn time.Duration) (postURL string, formData map[string]string, err error)
+	PresignPostObject(objectKey string, expiresIn time.Duration) (signedURL, fileField string, formData map[string]string, err error)
 }
 
 type Part struct {
@@ -79,7 +78,7 @@ type Upload struct {
 type MultipartUploadAbleBucket interface {
 	ListMultipartUploads(objectKeyPrefix string) (uploads []Upload, err error)
 	InitMultipartUpload(objectKey string) (uploadId string, err error)
-	UploadPart(objectKey, uploadId string, partNum int, reader io.ReadSeeker) error
+	UploadPart(objectKey, uploadId string, partNum int, reader io.ReadSeeker) (eTag string, err error)
 	ListParts(objectKey string, uploadId string) (parts []Part, err error)
 	CompleteUploadPart(objectKey string, uploadId string, parts []CompletePart) error
 	AbortMultipartUpload(objectKey string, uploadId string) error

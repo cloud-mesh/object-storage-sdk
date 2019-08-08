@@ -47,7 +47,7 @@ func (b *obsBucket) InitMultipartUpload(objectKey string) (string, error) {
 	return output.UploadId, nil
 }
 
-func (b *obsBucket) UploadPart(objectKey string, uploadId string, partNum int, reader io.ReadSeeker) error {
+func (b *obsBucket) UploadPart(objectKey string, uploadId string, partNum int, reader io.ReadSeeker) (string, error) {
 	partSize, _ := aws.SeekerLen(reader)
 	input := &obs.UploadPartInput{
 		Bucket:     b.bucketName,
@@ -58,8 +58,11 @@ func (b *obsBucket) UploadPart(objectKey string, uploadId string, partNum int, r
 		Body:       reader,
 	}
 
-	_, err := b.client.UploadPart(input)
-	return err
+	output, err := b.client.UploadPart(input)
+	if err != nil {
+		return "", err
+	}
+	return output.ETag, nil
 }
 
 func (b *obsBucket) ListParts(objectKey string, uploadId string) (parts []sdk.Part, err error) {

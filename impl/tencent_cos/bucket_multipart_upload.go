@@ -47,12 +47,16 @@ func (b *cosBucket) InitMultipartUpload(objectKey string) (uploadId string, err 
 	return result.UploadID, nil
 }
 
-func (b *cosBucket) UploadPart(objectKey, uploadId string, partNum int, reader io.ReadSeeker) error {
+func (b *cosBucket) UploadPart(objectKey, uploadId string, partNum int, reader io.ReadSeeker) (string, error) {
 	ctx, cancel := b.config.NewContext()
 	defer cancel()
 
-	_, err := b.client.Object.UploadPart(ctx, objectKey, uploadId, partNum, reader, nil)
-	return err
+	result, err := b.client.Object.UploadPart(ctx, objectKey, uploadId, partNum, reader, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return result.Header.Get("Etag"), nil
 }
 
 func (b *cosBucket) ListParts(objectKey string, uploadId string) (parts []sdk.Part, err error) {

@@ -42,10 +42,10 @@ func (b *s3Bucket) HeadObject(objectKey string) (object sdk.ObjectMeta, err erro
 	}
 
 	return sdk.ObjectMeta{
-		ContentType:   *output.ContentType,
-		ContentLength: int(*output.ContentLength),
-		ETag:          *output.ETag,
-		LastModified:  *output.LastModified,
+		ContentType:   aws.StringValue(output.ContentType),
+		ContentLength: int(aws.Int64Value(output.ContentLength)),
+		ETag:          aws.StringValue(output.ETag),
+		LastModified:  aws.TimeValue(output.LastModified),
 	}, nil
 }
 
@@ -58,12 +58,12 @@ func (b *s3Bucket) ListObjects(objectPrefix string) (objects []sdk.ObjectPropert
 
 	for _, object := range output.Contents {
 		objects = append(objects, sdk.ObjectProperty{
-			ObjectKey: *object.Key,
+			ObjectKey: aws.StringValue(object.Key),
 			ObjectMeta: sdk.ObjectMeta{
 				ContentType:   "",
 				ContentLength: int(*object.Size),
-				ETag:          *object.ETag,
-				LastModified:  *object.LastModified,
+				ETag:          aws.StringValue(object.ETag),
+				LastModified:  aws.TimeValue(object.LastModified),
 			},
 		})
 	}
@@ -86,7 +86,7 @@ func (b *s3Bucket) CopyObject(srcObjectKey, dstObjectKey string) error {
 	input := &s3.CopyObjectInput{
 		Bucket:     aws.String(b.bucketName),
 		Key:        aws.String(dstObjectKey),
-		CopySource: &copySource,
+		CopySource: aws.String(copySource),
 	}
 	_, err := b.client.CopyObject(input)
 	return err

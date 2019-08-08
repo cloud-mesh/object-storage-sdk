@@ -87,7 +87,7 @@ func BucketPresignGetObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 	signedURL, err := presignBucket.PresignGetObject(objectKey, time.Second)
 	assert.Nil(t, err)
 
-	reader, err := sdk.GetObjectWithURL(signedURL, 5*time.Second)
+	reader, _, err := sdk.GetObjectWithURL(signedURL, 5*time.Second)
 	assert.Nil(t, err)
 	bytes, err := ioutil.ReadAll(reader)
 	assert.Nil(t, err)
@@ -106,7 +106,7 @@ func BucketPresignPutObjectTest(t *testing.T, bucket sdk.BasicBucket) {
 
 	content := "test content"
 	buffer := strings.NewReader(content)
-	err = sdk.PutObjectWithURL(signedURL, buffer, 5*time.Second)
+	_, err = sdk.PutObjectWithURL(signedURL, buffer, 5*time.Second)
 	assert.Nil(t, err)
 	defer bucket.RemoveObject(objectKey)
 

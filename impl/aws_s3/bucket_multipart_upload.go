@@ -22,9 +22,9 @@ func (b *s3Bucket) ListMultipartUploads(objectKeyPrefix string) (uploads []sdk.U
 
 	for _, upload := range output.Uploads {
 		uploads = append(uploads, sdk.Upload{
-			ObjectKey: *upload.Key,
-			UploadId:  *upload.UploadId,
-			Initiated: *upload.Initiated,
+			ObjectKey: aws.StringValue(upload.Key),
+			UploadId:  aws.StringValue(upload.UploadId),
+			Initiated: aws.TimeValue(upload.Initiated),
 		})
 	}
 
@@ -41,10 +41,10 @@ func (b *s3Bucket) InitMultipartUpload(objectKey string) (uploadId string, err e
 		return
 	}
 
-	return *output.UploadId, nil
+	return aws.StringValue(output.UploadId), nil
 }
 
-func (b *s3Bucket) UploadPart(objectKey, uploadId string, partNum int, reader io.ReadSeeker) error {
+func (b *s3Bucket) UploadPart(objectKey, uploadId string, partNum int, reader io.ReadSeeker) (string, error) {
 	input := &s3.UploadPartInput{
 		Bucket:     aws.String(b.bucketName),
 		Key:        aws.String(objectKey),
@@ -52,8 +52,12 @@ func (b *s3Bucket) UploadPart(objectKey, uploadId string, partNum int, reader io
 		PartNumber: aws.Int64(int64(partNum)),
 		Body:       reader,
 	}
-	_, err := b.client.UploadPart(input)
-	return err
+	output, err := b.client.UploadPart(input)
+	if err != nil {
+		return "", err
+	}
+
+	return aws.StringValue(output.ETag), nil
 }
 
 func (b *s3Bucket) ListParts(objectKey string, uploadId string) (parts []sdk.Part, err error) {
@@ -69,10 +73,10 @@ func (b *s3Bucket) ListParts(objectKey string, uploadId string) (parts []sdk.Par
 
 	for _, part := range output.Parts {
 		parts = append(parts, sdk.Part{
-			PartNumber:   int(*part.PartNumber),
-			Size:         int(*part.Size),
-			ETag:         strings.ToLower(*part.ETag),
-			LastModified: *part.LastModified,
+			PartNumber:   int(aws.Int64Value(part.PartNumber)),
+			Size:         int(aws.Int64Value(part.Size)),
+			ETag:         strings.ToLower(aws.StringValue(part.ETag)),
+			LastModified: aws.TimeValue(part.LastModified),
 		})
 	}
 	return
