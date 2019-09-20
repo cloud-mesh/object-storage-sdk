@@ -1,8 +1,8 @@
 package tencent_cos
 
 import (
-	sdk "github.com/inspii/object_storage_sdk"
-	"github.com/inspii/object_storage_sdk/testcase"
+	sdk "github.com/inspii/object-storage-sdk"
+	"github.com/inspii/object-storage-sdk/testcase"
 	"testing"
 )
 

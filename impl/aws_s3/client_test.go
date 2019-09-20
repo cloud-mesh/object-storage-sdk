@@ -2,7 +2,7 @@ package aws_s3
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/inspii/object_storage_sdk/testcase"
+	"github.com/inspii/object-storage-sdk/testcase"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"

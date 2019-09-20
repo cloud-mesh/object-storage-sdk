@@ -1,8 +1,8 @@
 package huaweicloud_obs
 
 import (
-	"github.com/inspii/object_storage_sdk/impl/huaweicloud_obs/obs"
-	"github.com/inspii/object_storage_sdk/testcase"
+	"github.com/inspii/object-storage-sdk/impl/huaweicloud_obs/obs"
+	"github.com/inspii/object-storage-sdk/testcase"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"

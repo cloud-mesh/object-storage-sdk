@@ -1,8 +1,8 @@
 package huaweicloud_obs
 
 import (
-	sdk "github.com/inspii/object_storage_sdk"
-	"github.com/inspii/object_storage_sdk/impl/huaweicloud_obs/obs"
+	sdk "github.com/inspii/object-storage-sdk"
+	"github.com/inspii/object-storage-sdk/impl/huaweicloud_obs/obs"
 )
 
 func NewClient(location string, client *obs.ObsClient) *obsClient {

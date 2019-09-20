@@ -3,7 +3,7 @@ package aws_s3
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	sdk "github.com/inspii/object_storage_sdk"
+	sdk "github.com/inspii/object-storage-sdk"
 	"io"
 	"strings"
 	"time"

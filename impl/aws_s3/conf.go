@@ -1,7 +1,7 @@
 package aws_s3
 
 import (
-	sdk "github.com/inspii/object_storage_sdk"
+	sdk "github.com/inspii/object-storage-sdk"
 )
 
 const (

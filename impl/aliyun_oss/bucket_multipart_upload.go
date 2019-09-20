@@ -3,7 +3,7 @@ package aliyun_oss
 import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/aws/aws-sdk-go/aws"
-	sdk "github.com/inspii/object_storage_sdk"
+	sdk "github.com/inspii/object-storage-sdk"
 	"io"
 	"strings"
 )

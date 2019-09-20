@@ -2,7 +2,7 @@ package aliyun_oss
 
 import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	sdk "github.com/inspii/object_storage_sdk"
+	sdk "github.com/inspii/object-storage-sdk"
 	"io"
 	"time"
 )
