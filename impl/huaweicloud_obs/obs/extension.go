@@ -13,21 +13,23 @@
 package obs
 
 import (
-	"encoding/xml"
 	"fmt"
+	"strings"
 )
 
-type ObsError struct {
-	BaseModel
-	Status   string
-	XMLName  xml.Name `xml:"Error"`
-	Code     string   `xml:"Code"`
-	Message  string   `xml:"Message"`
-	Resource string   `xml:"Resource"`
-	HostId   string   `xml:"HostId"`
+type extensionOptions interface{}
+type extensionHeaders func(headers map[string][]string, isObs bool) error
+
+func setHeaderPrefix(key string, value string) extensionHeaders{
+	return func(headers map[string][]string, isObs bool) error{
+		if strings.TrimSpace(value) == ""{
+			return fmt.Errorf("set header %s with empty value", key)
+		}
+		setHeaders(headers, key, []string{value}, isObs)
+		return nil
+	}
 }
 
-func (err ObsError) Error() string {
-	return fmt.Sprintf("obs: service returned error: Status=%s, Code=%s, Message=%s, RequestId=%s",
-		err.Status, err.Code, err.Message, err.RequestId)
+func WithReqPaymentHeader(requester PayerType) extensionHeaders{
+	return setHeaderPrefix(REQUEST_PAYER, string(requester))
 }

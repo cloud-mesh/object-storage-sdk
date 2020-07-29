@@ -1,7 +1,19 @@
+// Copyright 2019 Huawei Technologies Co.,Ltd.
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+// this file except in compliance with the License.  You may obtain a copy of the
+// License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations under the License.
+
 package obs
 
 const (
-	obs_sdk_version        = "3.1.1"
+	obs_sdk_version        = "3.20.5"
 	USER_AGENT             = "obs-sdk-go/" + obs_sdk_version
 	HEADER_PREFIX          = "x-amz-"
 	HEADER_PREFIX_META     = "x-amz-meta-"
@@ -10,6 +22,7 @@ const (
 	HEADER_DATE_AMZ        = "x-amz-date"
 	HEADER_DATE_OBS        = "x-obs-date"
 	HEADER_STS_TOKEN_AMZ   = "x-amz-security-token"
+	HEADER_STS_TOKEN_OBS   = "x-obs-security-token"
 	HEADER_ACCESSS_KEY_AMZ = "AWSAccessKeyId"
 	PREFIX_META            = "meta-"
 
@@ -58,6 +71,7 @@ const (
 	HEADER_CACHE_CONTROL                    = "cache-control"
 	HEADER_CONTENT_DISPOSITION              = "content-disposition"
 	HEADER_CONTENT_ENCODING                 = "content-encoding"
+	HEADER_AZ_REDUNDANCY					= "az-redundancy"
 
 	HEADER_ETAG         = "etag"
 	HEADER_LASTMODIFIED = "last-modified"
@@ -131,6 +145,7 @@ const (
 	DEFAULT_HEADER_TIMEOUT       = 60
 	DEFAULT_IDLE_CONN_TIMEOUT    = 30
 	DEFAULT_MAX_RETRY_COUNT      = 3
+	DEFAULT_MAX_REDIRECT_COUNT   = 3
 	DEFAULT_MAX_CONN_PER_HOST    = 1000
 	EMPTY_CONTENT_SHA256         = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 	UNSIGNED_PAYLOAD             = "UNSIGNED-PAYLOAD"
@@ -160,6 +175,9 @@ const (
 	HTTP_DELETE  = "DELETE"
 	HTTP_HEAD    = "HEAD"
 	HTTP_OPTIONS = "OPTIONS"
+
+	REQUEST_PAYER = "request-payer"
+	MULTI_AZ = "3az"
 )
 
 type SignatureType string
@@ -191,6 +209,7 @@ var (
 		"last-modified":                 true,
 		"content-range":                 true,
 		"x-reserved":                    true,
+		"x-reserved-indicator":          true,
 		"access-control-allow-origin":   true,
 		"access-control-allow-headers":  true,
 		"access-control-max-age":        true,
@@ -264,6 +283,7 @@ var (
 		"x-oss-process":                true,
 		"x-image-save-bucket":          true,
 		"x-image-save-object":          true,
+		"ignore-sign-in-query":         true,
 	}
 
 	mime_types = map[string]string{
@@ -432,14 +452,14 @@ var (
 		"mp2":     "audio/mp2",
 		"mp2v":    "video/mpeg",
 		"mp3":     "audio/mp3",
-		"mp4":     "video/mpeg4",
+		"mp4":     "video/mp4",
 		"mp4a":    "audio/mp4",
 		"mp4v":    "video/mp4",
 		"mpa":     "video/x-mpg",
 		"mpd":     "application/vnd.ms-project",
-		"mpe":     "video/x-mpeg",
-		"mpeg":    "video/mpg",
-		"mpg":     "video/mpg",
+		"mpe":     "video/mpeg",
+		"mpeg":    "video/mpeg",
+		"mpg":     "video/mpeg",
 		"mpg4":    "video/mp4",
 		"mpga":    "audio/rn-mpeg",
 		"mpp":     "application/vnd.ms-project",
@@ -556,7 +576,7 @@ var (
 		"stl":     "application/vnd.ms-pki.stl",
 		"stm":     "text/html",
 		"sty":     "application/x-sty",
-		"svg":     "text/xml",
+		"svg":     "image/svg+xml",
 		"swf":     "application/x-shockwave-flash",
 		"tar":     "application/x-tar",
 		"tdf":     "application/x-tdf",
@@ -679,6 +699,7 @@ const (
 	SubResourceUploads       SubResourceType = "uploads"
 	SubResourceRestore       SubResourceType = "restore"
 	SubResourceMetadata      SubResourceType = "metadata"
+	SubResourceRequestPayment SubResourceType = "requestPayment"
 )
 
 type AclType string
@@ -701,6 +722,8 @@ const (
 	StorageClassStandard StorageClassType = "STANDARD"
 	StorageClassWarm     StorageClassType = "WARM"
 	StorageClassCold     StorageClassType = "COLD"
+	storageClassStandardIA StorageClassType = "STANDARD_IA"
+	storageClassGlacier  StorageClassType = "GLACIER"
 )
 
 type PermissionType string
@@ -777,4 +800,12 @@ const (
 	ObjectRemovedAll                     EventType = "ObjectRemoved:*"
 	ObjectRemovedDelete                  EventType = "ObjectRemoved:Delete"
 	ObjectRemovedDeleteMarkerCreated     EventType = "ObjectRemoved:DeleteMarkerCreated"
+)
+
+type PayerType string
+
+const (
+	BucketOwnerPayer         PayerType = "BucketOwner"
+	RequesterPayer           PayerType = "Requester"
+	Requester                PayerType = "requester"
 )

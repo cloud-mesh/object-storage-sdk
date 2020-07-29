@@ -1,3 +1,15 @@
+// Copyright 2019 Huawei Technologies Co.,Ltd.
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+// this file except in compliance with the License.  You may obtain a copy of the
+// License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations under the License.
+
 package obs
 
 import (
@@ -10,7 +22,14 @@ import (
 
 func (obsClient ObsClient) doAuthTemporary(method, bucketName, objectKey string, params map[string]string,
 	headers map[string][]string, expires int64) (requestUrl string, err error) {
-
+	isAkSkEmpty := obsClient.conf.securityProvider == nil || obsClient.conf.securityProvider.ak == "" || obsClient.conf.securityProvider.sk == ""
+	if isAkSkEmpty == false && obsClient.conf.securityProvider.securityToken != "" {
+		if obsClient.conf.signature == SignatureObs {
+			params[HEADER_STS_TOKEN_OBS] = obsClient.conf.securityProvider.securityToken
+		} else {
+			params[HEADER_STS_TOKEN_AMZ] = obsClient.conf.securityProvider.securityToken
+		}
+	}
 	requestUrl, canonicalizedUrl := obsClient.conf.formatUrls(bucketName, objectKey, params, true)
 	parsedRequestUrl, err := url.Parse(requestUrl)
 	if err != nil {
@@ -22,18 +41,28 @@ func (obsClient ObsClient) doAuthTemporary(method, bucketName, objectKey string,
 	isV4 := obsClient.conf.signature == SignatureV4
 	prepareHostAndDate(headers, hostName, isV4)
 
-	if obsClient.conf.securityProvider == nil || obsClient.conf.securityProvider.ak == "" || obsClient.conf.securityProvider.sk == "" {
+	if isAkSkEmpty {
 		doLog(LEVEL_WARN, "No ak/sk provided, skip to construct authorization")
 	} else {
-		if obsClient.conf.securityProvider.securityToken != "" {
-			params[HEADER_STS_TOKEN_AMZ] = obsClient.conf.securityProvider.securityToken
-		}
-
 		if isV4 {
-			date, _ := time.Parse(RFC1123_FORMAT, headers[HEADER_DATE_CAMEL][0])
+			date, parseDateErr := time.Parse(RFC1123_FORMAT, headers[HEADER_DATE_CAMEL][0])
+			if parseDateErr != nil{
+				doLog(LEVEL_WARN, "Failed to parse date with reason: %v", parseDateErr)
+				return "", parseDateErr
+			}
 			delete(headers, HEADER_DATE_CAMEL)
 			shortDate := date.Format(SHORT_DATE_FORMAT)
 			longDate := date.Format(LONG_DATE_FORMAT)
+			if len(headers[HEADER_HOST_CAMEL]) != 0{
+				index := strings.LastIndex(headers[HEADER_HOST_CAMEL][0],":")
+				if index != -1{
+					port := headers[HEADER_HOST_CAMEL][0][index+1:]
+					if port == "80" || port == "443"{
+						headers[HEADER_HOST_CAMEL] = []string{headers[HEADER_HOST_CAMEL][0][:index]}
+					}
+				}
+				
+			}	
 
 			signedHeaders, _headers := getSignedHeaders(headers)
 
@@ -45,7 +74,11 @@ func (obsClient ObsClient) doAuthTemporary(method, bucketName, objectKey string,
 			params[PARAM_SIGNEDHEADERS_AMZ_CAMEL] = strings.Join(signedHeaders, ";")
 
 			requestUrl, canonicalizedUrl = obsClient.conf.formatUrls(bucketName, objectKey, params, true)
-			parsedRequestUrl, _ = url.Parse(requestUrl)
+			parsedRequestUrl, _err := url.Parse(requestUrl)
+			if _err != nil{
+				return "", _err
+			}
+
 			stringToSign := getV4StringToSign(method, canonicalizedUrl, parsedRequestUrl.RawQuery, scope, longDate, UNSIGNED_PAYLOAD, signedHeaders, _headers)
 			signature := getSignature(stringToSign, obsClient.conf.securityProvider.sk, obsClient.conf.region, shortDate)
 
@@ -53,11 +86,15 @@ func (obsClient ObsClient) doAuthTemporary(method, bucketName, objectKey string,
 
 		} else {
 			originDate := headers[HEADER_DATE_CAMEL][0]
-			date, _ := time.Parse(RFC1123_FORMAT, originDate)
+			date, parseDateErr := time.Parse(RFC1123_FORMAT, originDate)
+			if parseDateErr != nil{
+				doLog(LEVEL_WARN, "Failed to parse date with reason: %v", parseDateErr)
+				return "", parseDateErr
+			}
 			expires += date.Unix()
 			headers[HEADER_DATE_CAMEL] = []string{Int64ToString(expires)}
 
-			stringToSign := getV2StringToSign(method, canonicalizedUrl, headers,obsClient.conf.signature==SignatureObs)
+			stringToSign := getV2StringToSign(method, canonicalizedUrl, headers, obsClient.conf.signature == SignatureObs)
 			signature := UrlEncode(Base64Encode(HmacSha1([]byte(obsClient.conf.securityProvider.sk), []byte(stringToSign))), false)
 			if strings.Index(requestUrl, "?") < 0 {
 				requestUrl += "?"
@@ -65,8 +102,12 @@ func (obsClient ObsClient) doAuthTemporary(method, bucketName, objectKey string,
 				requestUrl += "&"
 			}
 			delete(headers, HEADER_DATE_CAMEL)
-			requestUrl += fmt.Sprintf("AWSAccessKeyId=%s&Expires=%d&Signature=%s", UrlEncode(obsClient.conf.securityProvider.ak, false),
-				expires, signature)
+
+
+			if obsClient.conf.signature != SignatureObs {
+				requestUrl += "AWS"
+			}
+			requestUrl += fmt.Sprintf("AccessKeyId=%s&Expires=%d&Signature=%s", UrlEncode(obsClient.conf.securityProvider.ak, false), expires, signature)
 		}
 	}
 
@@ -75,8 +116,16 @@ func (obsClient ObsClient) doAuthTemporary(method, bucketName, objectKey string,
 
 func (obsClient ObsClient) doAuth(method, bucketName, objectKey string, params map[string]string,
 	headers map[string][]string, hostName string) (requestUrl string, err error) {
+	isAkSkEmpty := obsClient.conf.securityProvider == nil || obsClient.conf.securityProvider.ak == "" || obsClient.conf.securityProvider.sk == ""
+	if isAkSkEmpty == false && obsClient.conf.securityProvider.securityToken != "" {
+		if obsClient.conf.signature == SignatureObs {
+			headers[HEADER_STS_TOKEN_OBS] = []string{obsClient.conf.securityProvider.securityToken}
+		} else {
+			headers[HEADER_STS_TOKEN_AMZ] = []string{obsClient.conf.securityProvider.securityToken}
+		}
+	}
 	isObs := obsClient.conf.signature == SignatureObs
-	requestUrl, canonicalizedUrl := obsClient.conf.formatUrls(bucketName, objectKey, params, true )
+	requestUrl, canonicalizedUrl := obsClient.conf.formatUrls(bucketName, objectKey, params, true)
 	parsedRequestUrl, err := url.Parse(requestUrl)
 	if err != nil {
 		return "", err
@@ -90,22 +139,19 @@ func (obsClient ObsClient) doAuth(method, bucketName, objectKey string, params m
 	isV4 := obsClient.conf.signature == SignatureV4
 	prepareHostAndDate(headers, hostName, isV4)
 
-	if obsClient.conf.securityProvider == nil || obsClient.conf.securityProvider.ak == "" || obsClient.conf.securityProvider.sk == "" {
+	if isAkSkEmpty {
 		doLog(LEVEL_WARN, "No ak/sk provided, skip to construct authorization")
 	} else {
-		if obsClient.conf.securityProvider.securityToken != "" {
-			headers[HEADER_STS_TOKEN_AMZ] = []string{obsClient.conf.securityProvider.securityToken}
-		}
 		ak := obsClient.conf.securityProvider.ak
 		sk := obsClient.conf.securityProvider.sk
 		var authorization string
 		if isV4 {
-			headers[HEADER_CONTENT_SHA256_AMZ] = []string{EMPTY_CONTENT_SHA256}
+			headers[HEADER_CONTENT_SHA256_AMZ] = []string{UNSIGNED_PAYLOAD}
 			ret := v4Auth(ak, sk, obsClient.conf.region, method, canonicalizedUrl, parsedRequestUrl.RawQuery, headers)
 			authorization = fmt.Sprintf("%s Credential=%s,SignedHeaders=%s,Signature=%s", V4_HASH_PREFIX, ret["Credential"], ret["SignedHeaders"], ret["Signature"])
 		} else {
 			ret := v2Auth(ak, sk, method, canonicalizedUrl, headers, isObs)
-			hashPrefix :=V2_HASH_PREFIX
+			hashPrefix := V2_HASH_PREFIX
 			if isObs {
 				hashPrefix = OBS_HASH_PREFIX
 			}
@@ -151,7 +197,7 @@ func encodeHeaders(headers map[string][]string) {
 	}
 }
 
-func attachHeaders(headers map[string][]string,isObs bool) string {
+func attachHeaders(headers map[string][]string, isObs bool) string {
 	length := len(headers)
 	_headers := make(map[string][]string, length)
 	keys := make([]string, 0, length)
@@ -161,7 +207,7 @@ func attachHeaders(headers map[string][]string,isObs bool) string {
 		if _key != "" {
 			prefixheader := HEADER_PREFIX
 			if isObs {
-				prefixheader =HEADER_PREFIX_OBS
+				prefixheader = HEADER_PREFIX_OBS
 			}
 			if _key == "content-md5" || _key == "content-type" || _key == "date" || strings.HasPrefix(_key, prefixheader) {
 				keys = append(keys, _key)
@@ -179,10 +225,10 @@ func attachHeaders(headers map[string][]string,isObs bool) string {
 		}
 	}
 	dateCamelHeader := PARAM_DATE_AMZ_CAMEL
-	dataHeader:=HEADER_DATE_AMZ
+	dataHeader := HEADER_DATE_AMZ
 	if isObs {
 		dateCamelHeader = PARAM_DATE_OBS_CAMEL
-		dataHeader =HEADER_DATE_OBS
+		dataHeader = HEADER_DATE_OBS
 	}
 	if _, ok := _headers[HEADER_DATE_CAMEL]; ok {
 		if _, ok := _headers[dataHeader]; ok {
@@ -230,13 +276,40 @@ func attachHeaders(headers map[string][]string,isObs bool) string {
 }
 
 func getV2StringToSign(method, canonicalizedUrl string, headers map[string][]string, isObs bool) string {
-	stringToSign := strings.Join([]string{method, "\n", attachHeaders(headers,isObs), "\n", canonicalizedUrl}, "")
-	doLog(LEVEL_DEBUG, "The v2 auth stringToSign:\n%s", stringToSign)
+	stringToSign := strings.Join([]string{method, "\n", attachHeaders(headers, isObs), "\n", canonicalizedUrl}, "")
+
+	var isSecurityToken bool
+	var securityToken []string
+	if isObs{
+		securityToken, isSecurityToken = headers[HEADER_STS_TOKEN_OBS]
+	}else{
+		securityToken, isSecurityToken = headers[HEADER_STS_TOKEN_AMZ]
+	}
+	var query []string
+	if !isSecurityToken{
+		parmas := strings.Split(canonicalizedUrl, "?")
+		if len(parmas) > 1{
+			query = strings.Split(parmas[1],"&")
+			for _, value := range query{
+				if strings.HasPrefix(value, HEADER_STS_TOKEN_AMZ + "=") || strings.HasPrefix(value, HEADER_STS_TOKEN_OBS + "="){
+					if value[len(HEADER_STS_TOKEN_AMZ)+1:] != ""{
+						securityToken = []string{value[len(HEADER_STS_TOKEN_AMZ)+1:]}
+						isSecurityToken = true
+					}
+				}
+			}
+		}
+	}
+	logStringToSign := stringToSign
+	if isSecurityToken && len(securityToken) > 0{
+		logStringToSign = strings.Replace(logStringToSign,securityToken[0],"******",-1)
+	}
+	doLog(LEVEL_DEBUG, "The v2 auth stringToSign:\n%s", logStringToSign)
 	return stringToSign
 }
 
 func v2Auth(ak, sk, method, canonicalizedUrl string, headers map[string][]string, isObs bool) map[string]string {
-	stringToSign := getV2StringToSign(method, canonicalizedUrl, headers,isObs)
+	stringToSign := getV2StringToSign(method, canonicalizedUrl, headers, isObs)
 	return map[string]string{"Signature": Base64Encode(HmacSha1([]byte(sk), []byte(stringToSign)))}
 }
 
@@ -273,7 +346,29 @@ func getV4StringToSign(method, canonicalizedUrl, queryUrl, scope, longDate, payl
 	canonicalRequest = append(canonicalRequest, payload)
 
 	_canonicalRequest := strings.Join(canonicalRequest, "")
-	doLog(LEVEL_DEBUG, "The v4 auth canonicalRequest:\n%s", _canonicalRequest)
+
+	var isSecurityToken bool
+	var securityToken []string
+	if securityToken, isSecurityToken = headers[HEADER_STS_TOKEN_OBS];!isSecurityToken{
+		securityToken, isSecurityToken = headers[HEADER_STS_TOKEN_AMZ]
+	}
+	var query []string
+	if !isSecurityToken{
+		query = strings.Split(queryUrl,"&")
+		for _, value := range query{
+			if strings.HasPrefix(value, HEADER_STS_TOKEN_AMZ + "=") || strings.HasPrefix(value, HEADER_STS_TOKEN_OBS + "="){
+				if value[len(HEADER_STS_TOKEN_AMZ)+1:] != ""{
+					securityToken = []string{value[len(HEADER_STS_TOKEN_AMZ)+1:]}
+					isSecurityToken = true
+				}
+			}
+		}
+	}
+	logCanonicalRequest := _canonicalRequest
+	if isSecurityToken && len(securityToken) > 0{
+		logCanonicalRequest = strings.Replace(logCanonicalRequest,securityToken[0],"******",-1)
+	}
+	doLog(LEVEL_DEBUG, "The v4 auth canonicalRequest:\n%s", logCanonicalRequest)
 
 	stringToSign := make([]string, 0, 7)
 	stringToSign = append(stringToSign, V4_HASH_PREFIX)
@@ -355,7 +450,7 @@ func v4Auth(ak, sk, region, method, canonicalizedUrl, queryUrl string, headers m
 
 	credential, scope := getCredential(ak, region, shortDate)
 
-	payload:= EMPTY_CONTENT_SHA256
+	payload := UNSIGNED_PAYLOAD
 	if val, ok := headers[HEADER_CONTENT_SHA256_AMZ]; ok {
 		payload = val[0]
 	}

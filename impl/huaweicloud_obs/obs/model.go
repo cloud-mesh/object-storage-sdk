@@ -1,3 +1,15 @@
+// Copyright 2019 Huawei Technologies Co.,Ltd.
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+// this file except in compliance with the License.  You may obtain a copy of the
+// License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations under the License.
+
 package obs
 
 import (
@@ -66,6 +78,7 @@ type CreateBucketInput struct {
 	GrantReadDeliveredId        string           `xml:"-"`
 	GrantFullControlDeliveredId string           `xml:"-"`
 	Epid                        string           `xml:"-"`
+	AvailableZone				string			 `xml:"-"`
 }
 
 type BucketStoragePolicy struct {
@@ -278,9 +291,10 @@ type grantObs struct {
 }
 
 type AccessControlPolicy struct {
-	XMLName xml.Name `xml:"AccessControlPolicy"`
-	Owner   Owner    `xml:"Owner"`
-	Grants  []Grant  `xml:"AccessControlList>Grant"`
+	XMLName    xml.Name `xml:"AccessControlPolicy"`
+	Owner      Owner    `xml:"Owner"`
+	Grants     []Grant  `xml:"AccessControlList>Grant"`
+	Delivered  string   `xml:"Delivered,omitempty"`
 }
 
 type accessControlPolicyObs struct {
@@ -312,7 +326,7 @@ type SetBucketPolicyInput struct {
 
 type GetBucketPolicyOutput struct {
 	BaseModel
-	Policy string `body`
+	Policy string `json:"body"`
 }
 
 type CorsRule struct {
@@ -415,33 +429,33 @@ type GetBucketMetadataInput struct {
 }
 
 type SetObjectMetadataInput struct {
-	Bucket                     string
-	Key                        string
-	VersionId                  string
-	MetadataDirective          MetadataDirectiveType
-	CacheControl               string
-	ContentDisposition         string
-	ContentEncoding            string
-	ContentLanguage            string
-	ContentType                string
-	Expires                    string
-	WebsiteRedirectLocation    string
-	StorageClass               StorageClassType
-	Metadata                   map[string]string
+	Bucket                  string
+	Key                     string
+	VersionId               string
+	MetadataDirective       MetadataDirectiveType
+	CacheControl            string
+	ContentDisposition      string
+	ContentEncoding         string
+	ContentLanguage         string
+	ContentType             string
+	Expires                 string
+	WebsiteRedirectLocation string
+	StorageClass            StorageClassType
+	Metadata                map[string]string
 }
 
 type SetObjectMetadataOutput struct {
 	BaseModel
-	MetadataDirective          MetadataDirectiveType
-	CacheControl               string
-	ContentDisposition         string
-	ContentEncoding            string
-	ContentLanguage            string
-	ContentType                string
-	Expires                    string
-	WebsiteRedirectLocation    string
-	StorageClass               StorageClassType
-	Metadata                   map[string]string
+	MetadataDirective       MetadataDirectiveType
+	CacheControl            string
+	ContentDisposition      string
+	ContentEncoding         string
+	ContentLanguage         string
+	ContentType             string
+	Expires                 string
+	WebsiteRedirectLocation string
+	StorageClass            StorageClassType
+	Metadata                map[string]string
 }
 
 type GetBucketMetadataOutput struct {
@@ -456,7 +470,6 @@ type GetBucketMetadataOutput struct {
 	ExposeHeader  string
 	Epid          string
 }
-
 
 type BucketLoggingStatus struct {
 	XMLName      xml.Name `xml:"BucketLoggingStatus"`
@@ -902,7 +915,7 @@ type ListPartsOutput struct {
 	MaxParts             int              `xml:"MaxParts"`
 	IsTruncated          bool             `xml:"IsTruncated"`
 	StorageClass         StorageClassType `xml:"StorageClass"`
-	Initiator            Initiator        `xml:"Initiator“`
+	Initiator            Initiator        `xml:"Initiator"`
 	Owner                Owner            `xml:"Owner"`
 	Parts                []Part           `xml:"Part"`
 }
@@ -959,4 +972,25 @@ type CreateBrowserBasedSignatureOutput struct {
 	Credential   string
 	Date         string
 	Signature    string
+}
+
+type HeadObjectInput struct {
+	Bucket        string
+	Key           string
+	VersionId     string
+}
+
+type BucketPayer struct {
+	XMLName  xml.Name    `xml:"RequestPaymentConfiguration"`
+	Payer    PayerType   `xml:"Payer"`
+}
+
+type SetBucketRequestPaymentInput struct{
+	Bucket 			string 	`xml:"-"`
+	BucketPayer
+}
+
+type GetBucketRequestPaymentOutput struct{
+	BaseModel
+	BucketPayer
 }
