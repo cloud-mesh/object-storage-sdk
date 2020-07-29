@@ -42,7 +42,7 @@ func (b *obsBucket) HeadObject(objectKey string) (object sdk.ObjectMeta, err err
 	}
 
 	return sdk.ObjectMeta{
-		ContentType:   output.ObjectType,
+		ContentType:   output.ContentType,
 		ContentLength: int(output.ContentLength),
 		ETag:          output.ETag,
 		LastModified:  output.LastModified,
