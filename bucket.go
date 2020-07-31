@@ -41,7 +41,7 @@ type BasicBucket interface {
 	GetObject(objectKey string) (io.ReadCloser, error)
 	HeadObject(objectKey string) (object ObjectMeta, err error)
 	ListObjects(objectPrefix string) (objects []ObjectProperty, err error)
-	PutObject(objectKey string, reader io.ReadSeeker) error
+	PutObject(objectKey string, reader io.Reader) error
 	CopyObject(srcObjectKey, dstObjectKey string) error
 	RemoveObject(objectKey string) error
 	RemoveObjects(objectKeys []string) error

@@ -42,6 +42,6 @@ func TestCosBucket_PresignPutObject(t *testing.T) {
 }
 
 func newBucket(t *testing.T) (bucket sdk.BasicBucket, destroy func()) {
-	client := newClient()
+	client := newClient(t)
 	return testcase.NewTestBucket(t, client)
 }

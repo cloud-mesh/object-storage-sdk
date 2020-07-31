@@ -25,14 +25,16 @@ func NewClient(region, endpoint string, accessKeyID, accessKeySecret string, con
 	client := s3.New(sess)
 
 	return &s3Client{
-		config: config,
-		client: client,
+		config:  config,
+		session: sess,
+		client:  client,
 	}, nil
 }
 
 type s3Client struct {
-	config *aws.Config
-	client *s3.S3
+	config  *aws.Config
+	session *session.Session
+	client  *s3.S3
 }
 
 func (c *s3Client) Bucket(bucketName string) (bucket sdk.BasicBucket, err error) {

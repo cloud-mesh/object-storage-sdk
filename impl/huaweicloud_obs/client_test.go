@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	testOBS      = os.Getenv("TEST_OBS")
 	testEndpoint = os.Getenv("TEST_OBS_ENDPOINT")
 	testLocation = os.Getenv("TEST_OBS_LOCATION")
 	testAK       = os.Getenv("TEST_OBS_AK")
@@ -28,6 +29,9 @@ func TestObsClient_CopyObject(t *testing.T) {
 }
 
 func newClient(t *testing.T) *obsClient {
+	if testOBS != "true" {
+		t.Skip()
+	}
 	obsClient, err := obs.New(testAK, testSK, testEndpoint)
 	assert.Nil(t, err)
 

@@ -76,7 +76,7 @@ func (b *obsBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProper
 	return
 }
 
-func (b *obsBucket) PutObject(objectKey string, reader io.ReadSeeker) error {
+func (b *obsBucket) PutObject(objectKey string, reader io.Reader) error {
 	input := &obs.PutObjectInput{
 		PutObjectBasicInput: obs.PutObjectBasicInput{
 			ObjectOperationInput: obs.ObjectOperationInput{

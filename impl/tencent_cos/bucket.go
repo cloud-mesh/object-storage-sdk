@@ -80,7 +80,7 @@ func (b *cosBucket) ListObjects(objectPrefix string) (objects []sdk.ObjectProper
 	return
 }
 
-func (b *cosBucket) PutObject(objectKey string, reader io.ReadSeeker) error {
+func (b *cosBucket) PutObject(objectKey string, reader io.Reader) error {
 	ctx, cancel := b.config.NewContext()
 	defer cancel()
 

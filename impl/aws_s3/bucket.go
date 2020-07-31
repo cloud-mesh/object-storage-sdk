@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	sdk "github.com/inspii/object-storage-sdk"
 	"io"
 	"time"
@@ -71,13 +72,28 @@ func (b *s3Bucket) ListObjects(objectPrefix string) (objects []sdk.ObjectPropert
 	return
 }
 
-func (b *s3Bucket) PutObject(objectKey string, reader io.ReadSeeker) error {
-	input := &s3.PutObjectInput{
+func (b *s3Bucket) PutObject(objectKey string, reader io.Reader) error {
+	if readerSeeker, ok := reader.(io.ReadSeeker); ok {
+		input := &s3.PutObjectInput{
+			Bucket: aws.String(b.bucketName),
+			Key:    aws.String(objectKey),
+			Body:   readerSeeker,
+		}
+		_, err := b.client.PutObject(input)
+		return err
+	}
+
+	// see: https://github.com/aws/aws-sdk-go/issues/915
+	uploader := s3manager.NewUploader(b.session, func(u *s3manager.Uploader) {
+		u.Concurrency = 1
+	})
+	input := &s3manager.UploadInput{
 		Bucket: aws.String(b.bucketName),
 		Key:    aws.String(objectKey),
 		Body:   reader,
 	}
-	_, err := b.client.PutObject(input)
+
+	_, err := uploader.Upload(input)
 	return err
 }
 
