@@ -1,8 +1,8 @@
 package aws_s3
 
 import (
-	sdk "github.com/inspii/object-storage-sdk"
-	"github.com/inspii/object-storage-sdk/testcase"
+	sdk "github.com/cloud-mesh/object-storage-sdk"
+	"github.com/cloud-mesh/object-storage-sdk/testcase"
 	"testing"
 )
 

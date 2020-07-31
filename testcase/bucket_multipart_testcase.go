@@ -2,7 +2,7 @@ package testcase
 
 import (
 	"fmt"
-	sdk "github.com/inspii/object-storage-sdk"
+	sdk "github.com/cloud-mesh/object-storage-sdk"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"

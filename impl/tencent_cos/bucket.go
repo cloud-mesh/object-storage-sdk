@@ -1,7 +1,7 @@
 package tencent_cos
 
 import (
-	sdk "github.com/inspii/object-storage-sdk"
+	sdk "github.com/cloud-mesh/object-storage-sdk"
 	"github.com/tencentyun/cos-go-sdk-v5"
 	"io"
 	"net/http"

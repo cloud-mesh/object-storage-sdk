@@ -2,7 +2,7 @@ package tencent_cos
 
 import (
 	"context"
-	sdk "github.com/inspii/object-storage-sdk"
+	sdk "github.com/cloud-mesh/object-storage-sdk"
 	"time"
 )
 

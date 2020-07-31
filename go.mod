@@ -1,4 +1,4 @@
-module github.com/inspii/object-storage-sdk
+module github.com/cloud-mesh/object-storage-sdk
 
 go 1.12
 

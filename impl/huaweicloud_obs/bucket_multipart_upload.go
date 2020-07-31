@@ -2,8 +2,8 @@ package huaweicloud_obs
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
-	sdk "github.com/inspii/object-storage-sdk"
-	"github.com/inspii/object-storage-sdk/impl/huaweicloud_obs/obs"
+	sdk "github.com/cloud-mesh/object-storage-sdk"
+	"github.com/cloud-mesh/object-storage-sdk/impl/huaweicloud_obs/obs"
 	"io"
 	"strconv"
 	"strings"

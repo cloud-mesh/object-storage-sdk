@@ -3,7 +3,7 @@ package testcase
 import (
 	"crypto/md5"
 	"fmt"
-	sdk "github.com/inspii/object-storage-sdk"
+	sdk "github.com/cloud-mesh/object-storage-sdk"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"strings"

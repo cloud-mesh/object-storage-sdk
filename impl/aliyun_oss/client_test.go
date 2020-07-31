@@ -1,7 +1,7 @@
 package aliyun_oss
 
 import (
-	"github.com/inspii/object-storage-sdk/testcase"
+	"github.com/cloud-mesh/object-storage-sdk/testcase"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
